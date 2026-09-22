@@ -1,357 +1,953 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Energías Primarias y Alternativas | Enfoque de Ingeniería</title>
-    <!-- Cargando Tailwind CSS -->
+    <title>Energías Primarias y Alternativas | Plataforma Interactiva de Ingeniería</title>
+    <meta name="description" content="Plataforma visual e interactiva para explicar energías primarias, alternativas y la transición energética con enfoque de ingeniería.">
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0f172a; /* Slate 900 */
-            color: #f8fafc; /* Slate 50 */
-            overflow-x: hidden;
+            background-color: #0b0f19;
+            color: #f1f5f9;
         }
 
-        /* Animaciones suaves */
-        .fade-in-up {
-            animation: fadeInUp 0.6s ease-out forwards;
-            opacity: 0;
-            transform: translateY(20px);
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
         }
 
-        @keyframes fadeInUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        /* Glassmorphism custom styling */
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        .card-hover {
-            transition: all 0.3s ease;
-        }
-        
-        .card-hover:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Degradados para iconos */
-        .svg-gradient-solar { fill: url(#grad-solar); }
-        .svg-gradient-wind { fill: url(#grad-wind); }
-        .svg-gradient-nuclear { fill: url(#grad-nuclear); }
-        .svg-gradient-hydro { fill: url(#grad-hydro); }
-        .svg-gradient-geo { fill: url(#grad-geo); }
-
-        /* Estilos del modal */
-        #modal-overlay {
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6);
             backdrop-filter: blur(8px);
-            transition: opacity 0.3s ease;
-        }
-        
-        #modal-content {
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .hidden-modal {
-            opacity: 0;
-            pointer-events: none;
+        .glass-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(56, 189, 248, 0.4);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(14, 165, 233, 0.2);
         }
 
-        .hidden-modal #modal-content {
-            transform: scale(0.9) translateY(20px);
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
         }
 
-        .active-modal {
-            opacity: 1;
-            pointer-events: auto;
+        /* Smooth pulse animation */
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
         }
-
-        .active-modal #modal-content {
-            transform: scale(1) translateY(0);
+        .animate-glow {
+            animation: pulse-glow 4s infinite ease-in-out;
         }
-
-        /* Scrollbar personalizada */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #1e293b; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
 </head>
-<body class="antialiased min-h-screen relative">
+<body class="min-h-screen flex flex-col selection:bg-sky-500 selection:text-white">
 
-    <!-- Definición de gradientes SVG para reutilizar en los iconos -->
-    <svg style="width:0;height:0;position:absolute;" aria-hidden="true" focusable="false">
-      <linearGradient id="grad-solar" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#FDE047" />
-        <stop offset="100%" stop-color="#EA580C" />
-      </linearGradient>
-      <linearGradient id="grad-wind" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#93C5FD" />
-        <stop offset="100%" stop-color="#2563EB" />
-      </linearGradient>
-      <linearGradient id="grad-nuclear" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#86EFAC" />
-        <stop offset="100%" stop-color="#16A34A" />
-      </linearGradient>
-      <linearGradient id="grad-hydro" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#67E8F9" />
-        <stop offset="100%" stop-color="#0891B2" />
-      </linearGradient>
-      <linearGradient id="grad-geo" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#FCA5A5" />
-        <stop offset="100%" stop-color="#DC2626" />
-      </linearGradient>
+    <!-- Gradient definitions for SVGs -->
+    <svg style="width:0;height:0;position:absolute;" aria-hidden="true">
+        <defs>
+            <linearGradient id="grad-solar" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#fbbf24" />
+                <stop offset="100%" stop-color="#f97316" />
+            </linearGradient>
+            <linearGradient id="grad-wind" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#38bdf8" />
+                <stop offset="100%" stop-color="#2563eb" />
+            </linearGradient>
+            <linearGradient id="grad-nuclear" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#4ade80" />
+                <stop offset="100%" stop-color="#16a34a" />
+            </linearGradient>
+            <linearGradient id="grad-hydro" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#22d3ee" />
+                <stop offset="100%" stop-color="#0284c7" />
+            </linearGradient>
+            <linearGradient id="grad-geo" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#f87171" />
+                <stop offset="100%" stop-color="#dc2626" />
+            </linearGradient>
+            <linearGradient id="grad-bio" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#a3e635" />
+                <stop offset="100%" stop-color="#65a30d" />
+            </linearGradient>
+            <linearGradient id="grad-ocean" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#818cf8" />
+                <stop offset="100%" stop-color="#4f46e5" />
+            </linearGradient>
+            <linearGradient id="grad-fossil" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#94a3b8" />
+                <stop offset="100%" stop-color="#475569" />
+            </linearGradient>
+        </defs>
     </svg>
 
-    <!-- Header / Hero Section -->
-    <header class="relative pt-20 pb-12 text-center px-4 overflow-hidden">
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-blue-900/40 via-slate-900 to-slate-900 -z-10"></div>
-        <div class="max-w-4xl mx-auto fade-in-up" style="animation-delay: 0.1s;">
-            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-300">
-                Matriz Energética del Futuro
+    <!-- Navigation Bar -->
+    <nav class="sticky top-0 z-40 glass-panel border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-gradient-to-tr from-sky-500 to-emerald-400 rounded-xl text-slate-950 font-bold">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <span class="text-xl font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                    EnergyMatrix<span class="text-sky-400 font-mono text-sm ml-1">v2.5</span>
+                </span>
+            </div>
+            <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
+                <a href="#flow-diagram" class="hover:text-sky-400 transition-colors">Flujo Energético</a>
+                <a href="#energies-grid" class="hover:text-sky-400 transition-colors">Fuentes</a>
+                <a href="#simulator-section" class="hover:text-sky-400 transition-colors">Simulador</a>
+                <a href="#matrix-table" class="hover:text-sky-400 transition-colors">Comparativa</a>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    GitHub Pages Ready
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="relative pt-16 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        <div class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-900/30 via-slate-950 to-slate-950"></div>
+        <div class="absolute top-10 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-sky-500/10 blur-[120px] rounded-full -z-10 animate-glow"></div>
+
+        <div class="max-w-5xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/80 border border-slate-700 text-xs text-sky-300 font-mono mb-6">
+                <span>⚡ Mapeo Didáctico de Física, Termodinámica e Ingeniería Electromecánica</span>
+            </div>
+            <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight mb-6 leading-tight">
+                Fuentes de Energía <br class="hidden sm:inline">
+                <span class="bg-gradient-to-r from-sky-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent">
+                    Primarias, Renovables y Alternativas
+                </span>
             </h1>
-            <p class="text-lg md:text-xl text-slate-300 font-light mb-8 max-w-2xl mx-auto">
-                Análisis técnico de energías primarias y alternativas. Fundamentos termodinámicos, eléctricos y el panorama de transición energética para la ingeniería.
+            <p class="text-lg sm:text-xl text-slate-300 font-light max-w-3xl mx-auto mb-10 leading-relaxed">
+                Explora el funcionamiento técnico, las ecuaciones constitutivas y el potencial de transformación de las fuentes primarias de la Tierra hacia la descarbonización de la matriz eléctrica global.
             </p>
+
+            <!-- Quick Metrics Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto text-left">
+                <div class="glass-card p-4 rounded-xl">
+                    <div class="text-xs text-slate-400 uppercase font-semibold">Demanda Global Electrónica</div>
+                    <div class="text-2xl font-bold text-sky-400 mt-1">~29,000 TWh</div>
+                    <div class="text-[11px] text-slate-400 mt-1">Consumo anual estimado</div>
+                </div>
+                <div class="glass-card p-4 rounded-xl">
+                    <div class="text-xs text-slate-400 uppercase font-semibold">Límite Betz Eólico</div>
+                    <div class="text-2xl font-bold text-teal-300 mt-1">59.3 %</div>
+                    <div class="text-[11px] text-slate-400 mt-1">Eficiencia teórica máx.</div>
+                </div>
+                <div class="glass-card p-4 rounded-xl">
+                    <div class="text-xs text-slate-400 uppercase font-semibold">Irradiación Solar Máx.</div>
+                    <div class="text-2xl font-bold text-amber-400 mt-1">1,000 W/m²</div>
+                    <div class="text-[11px] text-slate-400 mt-1">Condición STC a nivel del mar</div>
+                </div>
+                <div class="glass-card p-4 rounded-xl">
+                    <div class="text-xs text-slate-400 uppercase font-semibold">Meta Emisiones 2050</div>
+                    <div class="text-2xl font-bold text-emerald-400 mt-1">Net-Zero</div>
+                    <div class="text-[11px] text-slate-400 mt-1">Transición descarbonizada</div>
+                </div>
+            </div>
         </div>
     </header>
 
-    <!-- Grid de Energías -->
-    <main class="max-w-7xl mx-auto px-4 pb-20">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="energy-grid">
-            <!-- Las tarjetas se insertarán dinámicamente vía JavaScript -->
-        </div>
-    </main>
-
-    <!-- Modal de Detalles Técnicos -->
-    <div id="modal-overlay" class="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-4 hidden-modal">
-        <div id="modal-content" class="bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto relative">
-            
-            <!-- Botón Cerrar -->
-            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-600 rounded-full p-2 transition-colors z-10">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
-
-            <!-- Cabecera del Modal -->
-            <div id="modal-header" class="p-8 border-b border-slate-700 flex flex-col md:flex-row items-center gap-6 relative overflow-hidden">
-                <div class="absolute inset-0 opacity-20" id="modal-bg-gradient"></div>
-                <div id="modal-icon-container" class="w-24 h-24 shrink-0 relative z-10"></div>
-                <div class="relative z-10 text-center md:text-left">
-                    <h2 id="modal-title" class="text-3xl font-bold text-white mb-2"></h2>
-                    <p id="modal-subtitle" class="text-slate-300 font-medium"></p>
+    <!-- Interactive Flow Diagram Section -->
+    <section id="flow-diagram" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-white flex items-center gap-3">
+                        <svg class="w-6 h-6 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                        Diagrama Interactivo: De la Fuente Primaria al Consumo Final
+                    </h2>
+                    <p class="text-sm text-slate-400 mt-1">Haz clic en los nodos para visualizar la transformación termodinámica o electromecánica.</p>
+                </div>
+                <div class="text-xs font-mono bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800 text-sky-300">
+                    Primera Ley de la Termodinámica: ΔU = Q - W
                 </div>
             </div>
 
-            <!-- Contenido Técnico del Modal -->
-            <div class="p-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                        <h3 class="text-xl font-semibold text-teal-400 mb-3 flex items-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                            Principio de Funcionamiento
-                        </h3>
-                        <p id="modal-principle" class="text-slate-300 leading-relaxed mb-6"></p>
+            <!-- SVG Flow Canvas -->
+            <div class="w-full overflow-x-auto">
+                <svg viewBox="0 0 900 320" class="w-full min-w-[700px] h-auto">
+                    <!-- Lines connecting nodes -->
+                    <path d="M 180 80 L 450 160" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4" class="animate-pulse" />
+                    <path d="M 180 160 L 450 160" stroke="#38bdf8" stroke-width="2" />
+                    <path d="M 180 240 L 450 160" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4" />
+                    <path d="M 450 160 L 720 80" stroke="#34d399" stroke-width="2" />
+                    <path d="M 450 160 L 720 160" stroke="#34d399" stroke-width="2" />
+                    <path d="M 450 160 L 720 240" stroke="#34d399" stroke-width="2" />
 
-                        <h3 class="text-xl font-semibold text-teal-400 mb-3 flex items-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
-                            Tecnología Clave
-                        </h3>
-                        <p id="modal-tech" class="text-slate-300 leading-relaxed"></p>
+                    <!-- Primary Sources Column -->
+                    <g transform="translate(40, 40)" class="cursor-pointer" onclick="filterCategory('renovables')">
+                        <rect width="140" height="70" rx="12" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+                        <text x="70" y="32" fill="#f8fafc" text-anchor="middle" font-size="13" font-weight="bold">Fuentes Renovables</text>
+                        <text x="70" y="50" fill="#94a3b8" text-anchor="middle" font-size="10">Solar, Eólica, Agua, Geotermia</text>
+                    </g>
+
+                    <g transform="translate(40, 125)" class="cursor-pointer" onclick="filterCategory('carga-base')">
+                        <rect width="140" height="70" rx="12" fill="#1e293b" stroke="#4ade80" stroke-width="1.5"/>
+                        <text x="70" y="32" fill="#f8fafc" text-anchor="middle" font-size="13" font-weight="bold">Energía Nuclear</text>
+                        <text x="70" y="50" fill="#94a3b8" text-anchor="middle" font-size="10">Fisión de Uranio / Torio</text>
+                    </g>
+
+                    <g transform="translate(40, 210)" class="cursor-pointer" onclick="filterCategory('fósiles')">
+                        <rect width="140" height="70" rx="12" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/>
+                        <text x="70" y="32" fill="#f8fafc" text-anchor="middle" font-size="13" font-weight="bold">Fuentes Fósiles</text>
+                        <text x="70" y="50" fill="#94a3b8" text-anchor="middle" font-size="10">Carbón, Gas, Petróleo</text>
+                    </g>
+
+                    <!-- Central Converter Node -->
+                    <g transform="translate(370, 115)">
+                        <rect width="160" height="90" rx="16" fill="#0f172a" stroke="#f59e0b" stroke-width="2"/>
+                        <circle cx="80" cy="35" r="16" fill="#f59e0b" fill-opacity="0.2" stroke="#f59e0b" stroke-width="1.5"/>
+                        <text x="80" y="40" fill="#fbbf24" text-anchor="middle" font-size="14" font-weight="bold">⚡</text>
+                        <text x="80" y="65" fill="#f8fafc" text-anchor="middle" font-size="12" font-weight="bold">Conversión & Red</text>
+                        <text x="80" y="78" fill="#94a3b8" text-anchor="middle" font-size="9">Inversores / Turbinas / Gen.</text>
+                    </g>
+
+                    <!-- Secondary Output Column -->
+                    <g transform="translate(650, 40)">
+                        <rect width="150" height="70" rx="12" fill="#1e293b" stroke="#34d399" stroke-width="1.5"/>
+                        <text x="75" y="32" fill="#f8fafc" text-anchor="middle" font-size="13" font-weight="bold">Electricidad Llimpia</text>
+                        <text x="75" y="50" fill="#94a3b8" text-anchor="middle" font-size="10">Red Electrica AC / Baterías</text>
+                    </g>
+
+                    <g transform="translate(650, 125)">
+                        <rect width="150" height="70" rx="12" fill="#1e293b" stroke="#34d399" stroke-width="1.5"/>
+                        <text x="75" y="32" fill="#f8fafc" text-anchor="middle" font-size="13" font-weight="bold">Calor de Proceso</text>
+                        <text x="75" y="50" fill="#94a3b8" text-anchor="middle" font-size="10">District Heating / Industria</text>
+                    </g>
+
+                    <g transform="translate(650, 210)">
+                        <rect width="150" height="70" rx="12" fill="#1e293b" stroke="#34d399" stroke-width="1.5"/>
+                        <text x="75" y="32" fill="#f8fafc" text-anchor="middle" font-size="13" font-weight="bold">Hidrógeno Verde</text>
+                        <text x="75" y="50" fill="#94a3b8" text-anchor="middle" font-size="10">Electrólisis H2 / e-Fuels</text>
+                    </g>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- Grid Controls & Filters Section -->
+    <section id="energies-grid" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+            <div>
+                <h2 class="text-3xl font-extrabold text-white tracking-tight">Fuentes Primarias y Alternativas</h2>
+                <p class="text-slate-400 text-sm mt-1">Selecciona una categoría o haz clic en cualquier tarjeta para profundizar en su ingeniería.</p>
+            </div>
+
+            <!-- Filter Buttons -->
+            <div class="flex flex-wrap gap-2" id="filter-buttons">
+                <button onclick="filterCategory('all')" data-cat="all" class="filter-btn active px-4 py-2 rounded-xl text-xs font-semibold bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20 transition-all">
+                    Todas
+                </button>
+                <button onclick="filterCategory('renovables')" data-cat="renovables" class="filter-btn px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all border border-slate-700">
+                    Renovables
+                </button>
+                <button onclick="filterCategory('carga-base')" data-cat="carga-base" class="filter-btn px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all border border-slate-700">
+                    Carga Base
+                </button>
+                <button onclick="filterCategory('fósiles')" data-cat="fósiles" class="filter-btn px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all border border-slate-700">
+                    Convencionales (Fósiles)
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Energy Cards Grid -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="cards-container">
+            <!-- Dynamic JS injected cards -->
+        </div>
+    </main>
+
+    <!-- Dynamic Energy Mix Simulator -->
+    <section id="simulator-section" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mb-16">
+        <div class="glass-panel rounded-3xl p-6 sm:p-10 border border-slate-800 bg-gradient-to-b from-slate-900/90 to-slate-950">
+            <div class="max-w-3xl mb-8">
+                <span class="text-xs font-mono text-sky-400 uppercase tracking-wider font-semibold">Herramienta Interactiva</span>
+                <h2 class="text-3xl font-extrabold text-white mt-1">Simulador de Matriz Energética Nacional</h2>
+                <p class="text-slate-300 text-sm mt-2">
+                    Ajusta los porcentajes de cada tecnología en la matriz eléctrica para analizar el impacto en emisiones de CO₂, estabilidad de red (inercia rotacional) y requerimiento de superficie.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                <!-- Controls Column -->
+                <div class="lg:col-span-7 space-y-6">
+                    <!-- Solar Slider -->
+                    <div>
+                        <div class="flex justify-between text-sm font-semibold mb-2">
+                            <span class="text-amber-400 flex items-center gap-2">☀️ Solar Fotovoltaica: <span id="val-solar">30</span>%</span>
+                            <span class="text-slate-400 font-mono text-xs" id="gw-solar">15.0 GW</span>
+                        </div>
+                        <input type="range" id="sim-solar" min="0" max="100" value="30" oninput="updateSimulator()" class="w-full accent-amber-400 bg-slate-800 h-2 rounded-lg cursor-pointer">
                     </div>
-                    
-                    <div class="bg-slate-900/50 p-6 rounded-xl border border-slate-700 h-fit">
-                        <h3 class="text-lg font-semibold text-blue-400 mb-3">Datos Relevantes & Casos</h3>
-                        <ul id="modal-facts" class="space-y-3 text-slate-300 text-sm">
-                            <!-- Lista dinámica -->
-                        </ul>
+
+                    <!-- Wind Slider -->
+                    <div>
+                        <div class="flex justify-between text-sm font-semibold mb-2">
+                            <span class="text-sky-400 flex items-center gap-2">🌬️ Eólica (Onshore/Offshore): <span id="val-wind">25</span>%</span>
+                            <span class="text-slate-400 font-mono text-xs" id="gw-wind">12.5 GW</span>
+                        </div>
+                        <input type="range" id="sim-wind" min="0" max="100" value="25" oninput="updateSimulator()" class="w-full accent-sky-400 bg-slate-800 h-2 rounded-lg cursor-pointer">
+                    </div>
+
+                    <!-- Hydro Slider -->
+                    <div>
+                        <div class="flex justify-between text-sm font-semibold mb-2">
+                            <span class="text-cyan-400 flex items-center gap-2">💧 Hidroeléctrica: <span id="val-hydro">20</span>%</span>
+                            <span class="text-slate-400 font-mono text-xs" id="gw-hydro">10.0 GW</span>
+                        </div>
+                        <input type="range" id="sim-hydro" min="0" max="100" value="20" oninput="updateSimulator()" class="w-full accent-cyan-400 bg-slate-800 h-2 rounded-lg cursor-pointer">
+                    </div>
+
+                    <!-- Nuclear Slider -->
+                    <div>
+                        <div class="flex justify-between text-sm font-semibold mb-2">
+                            <span class="text-emerald-400 flex items-center gap-2">⚛️ Nuclear: <span id="val-nuclear">15</span>%</span>
+                            <span class="text-slate-400 font-mono text-xs" id="gw-nuclear">7.5 GW</span>
+                        </div>
+                        <input type="range" id="sim-nuclear" min="0" max="100" value="15" oninput="updateSimulator()" class="w-full accent-emerald-400 bg-slate-800 h-2 rounded-lg cursor-pointer">
+                    </div>
+
+                    <!-- Gas Slider -->
+                    <div>
+                        <div class="flex justify-between text-sm font-semibold mb-2">
+                            <span class="text-slate-400 flex items-center gap-2">🔥 Gas Natural (Ciclo Combinado): <span id="val-gas">10</span>%</span>
+                            <span class="text-slate-400 font-mono text-xs" id="gw-gas">5.0 GW</span>
+                        </div>
+                        <input type="range" id="sim-gas" min="0" max="100" value="10" oninput="updateSimulator()" class="w-full accent-slate-400 bg-slate-800 h-2 rounded-lg cursor-pointer">
+                    </div>
+                </div>
+
+                <!-- Live Results Column -->
+                <div class="lg:col-span-5 bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-6">
+                    <h3 class="text-lg font-bold text-white border-b border-slate-800 pb-3 flex items-center justify-between">
+                        <span>Resultados de Simulación</span>
+                        <span id="total-share-badge" class="px-2.5 py-1 rounded-full text-xs font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">100% Total</span>
+                    </h3>
+
+                    <div>
+                        <div class="flex justify-between text-xs text-slate-400 mb-1">
+                            <span>Intensidad de Carbono (gCO₂ / kWh)</span>
+                            <span id="sim-co2-val" class="font-mono text-emerald-400 font-bold">115 g</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                            <div id="bar-co2" class="bg-gradient-to-r from-emerald-400 to-amber-400 h-full transition-all duration-300" style="width: 25%"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs text-slate-400 mb-1">
+                            <span>Índice de Estabilidad de Red (Inercia)</span>
+                            <span id="sim-stability-val" class="font-mono text-sky-400 font-bold">Alta (45% Baseload)</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                            <div id="bar-stability" class="bg-sky-400 h-full transition-all duration-300" style="width: 75%"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs text-slate-400 mb-1">
+                            <span>Uso Estimado de Tierra (km²)</span>
+                            <span id="sim-land-val" class="font-mono text-amber-300 font-bold">~1,250 km²</span>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 text-xs text-slate-400 bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                        💡 <strong>Diagnóstico de Ingeniería:</strong> <span id="sim-diagnostic" class="text-slate-300">Matriz equilibrada con buena penetración renovable y respaldo adecuado de firmeza.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparative Matrix Table -->
+    <section id="matrix-table" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="glass-panel rounded-3xl p-6 sm:p-8 border border-slate-800">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-white">Tabla Comparativa de Indicadores Clave</h2>
+                <p class="text-sm text-slate-400 mt-1">Comparación de Costos Nivelados de Energía (LCOE), Densidad Energética y Emisiones de Ciclo de Vida.</p>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="text-xs uppercase bg-slate-900/80 text-sky-400 font-mono border-b border-slate-800">
+                        <tr>
+                            <th scope="col" class="py-3.5 px-4">Fuente Energética</th>
+                            <th scope="col" class="py-3.5 px-4">LCOE Medio ($/MWh)</th>
+                            <th scope="col" class="py-3.5 px-4">Factor de Planta (%)</th>
+                            <th scope="col" class="py-3.5 px-4">Emisiones (gCO₂/kWh)</th>
+                            <th scope="col" class="py-3.5 px-4">Despachabilidad</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60 font-medium">
+                        <tr class="hover:bg-slate-800/40 transition-colors">
+                            <td class="py-3.5 px-4 font-semibold text-white flex items-center gap-2">☀️ Solar Fotovoltaica</td>
+                            <td class="py-3.5 px-4 font-mono text-emerald-400">$30 - $45</td>
+                            <td class="py-3.5 px-4 font-mono">20% - 30%</td>
+                            <td class="py-3.5 px-4 font-mono text-emerald-400">~40 g</td>
+                            <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded text-xs bg-amber-500/10 text-amber-300 border border-amber-500/20">Intermitente</span></td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/40 transition-colors">
+                            <td class="py-3.5 px-4 font-semibold text-white flex items-center gap-2">🌬️ Eólica Onshore</td>
+                            <td class="py-3.5 px-4 font-mono text-emerald-400">$28 - $50</td>
+                            <td class="py-3.5 px-4 font-mono">35% - 55%</td>
+                            <td class="py-3.5 px-4 font-mono text-emerald-400">~11 g</td>
+                            <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded text-xs bg-amber-500/10 text-amber-300 border border-amber-500/20">Intermitente</span></td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/40 transition-colors">
+                            <td class="py-3.5 px-4 font-semibold text-white flex items-center gap-2">⚛️ Nuclear (Fisión)</td>
+                            <td class="py-3.5 px-4 font-mono text-slate-300">$65 - $110</td>
+                            <td class="py-3.5 px-4 font-mono text-emerald-400">90% - 95%</td>
+                            <td class="py-3.5 px-4 font-mono text-emerald-400">~12 g</td>
+                            <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded text-xs bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">Carga Base Continua</span></td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/40 transition-colors">
+                            <td class="py-3.5 px-4 font-semibold text-white flex items-center gap-2">💧 Hidroeléctrica</td>
+                            <td class="py-3.5 px-4 font-mono text-emerald-400">$40 - $75</td>
+                            <td class="py-3.5 px-4 font-mono">40% - 60%</td>
+                            <td class="py-3.5 px-4 font-mono text-emerald-400">~24 g</td>
+                            <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded text-xs bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">Despachable Rápido</span></td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/40 transition-colors">
+                            <td class="py-3.5 px-4 font-semibold text-white flex items-center gap-2">🔥 Gas Natural (CC)</td>
+                            <td class="py-3.5 px-4 font-mono text-slate-300">$55 - $85</td>
+                            <td class="py-3.5 px-4 font-mono">60% - 85%</td>
+                            <td class="py-3.5 px-4 font-mono text-red-400">~450 g</td>
+                            <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded text-xs bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">Alta Despachabilidad</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Detailed Technical Modal Dialog -->
+    <div id="tech-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div id="modal-container" class="bg-slate-900 border border-slate-700 w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl overflow-y-auto transform scale-95 transition-all duration-300 flex flex-col">
+            
+            <!-- Modal Top Header -->
+            <div id="modal-header" class="p-6 sm:p-8 border-b border-slate-800 flex items-start justify-between relative overflow-hidden">
+                <div class="absolute inset-0 -z-10 opacity-20" id="modal-gradient-bg"></div>
+                <div class="flex items-center gap-5">
+                    <div id="modal-icon" class="w-16 h-16 shrink-0 p-3 rounded-2xl bg-slate-800 border border-slate-700"></div>
+                    <div>
+                        <span id="modal-badge" class="px-2.5 py-0.5 rounded-full text-xs font-mono uppercase tracking-wider font-semibold bg-slate-800 text-sky-300 border border-slate-700">Categoría</span>
+                        <h2 id="modal-title" class="text-3xl font-extrabold text-white mt-1">Título de Energía</h2>
+                        <p id="modal-subtitle" class="text-sm text-slate-300 font-medium"></p>
+                    </div>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-full p-2.5 transition-colors border border-slate-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- Modal Content Body -->
+            <div class="p-6 sm:p-8 space-y-8">
+                <!-- SVG Schematic Diagram -->
+                <div class="bg-slate-950 p-6 rounded-2xl border border-slate-800 flex flex-col items-center">
+                    <h4 class="text-xs font-mono uppercase text-sky-400 mb-4 tracking-wider">Esquema Técnico del Proceso</h4>
+                    <div id="modal-svg-diagram" class="w-full flex justify-center"></div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Left Column: Physics & Tech -->
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2 mb-2">
+                                🔬 Fundamento Físico & Termodinámico
+                            </h3>
+                            <p id="modal-physics" class="text-slate-300 text-sm leading-relaxed"></p>
+                        </div>
+
+                        <div id="modal-formula-box" class="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-xs text-teal-300">
+                            <!-- Injected formula -->
+                        </div>
+
+                        <div>
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2 mb-2">
+                                ⚙️ Componentes de Ingeniería
+                            </h3>
+                            <p id="modal-components" class="text-slate-300 text-sm leading-relaxed"></p>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Case Studies & Specs -->
+                    <div class="space-y-6">
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700/60">
+                            <h3 class="text-base font-bold text-sky-300 mb-3 flex items-center gap-2">
+                                📌 Casos de Estudio e Hitos Destacados
+                            </h3>
+                            <ul id="modal-cases" class="space-y-3 text-slate-300 text-xs">
+                                <!-- Injected cases -->
+                            </ul>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 text-xs font-mono">
+                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                <span class="text-slate-400 block mb-1">Eficiencia Global</span>
+                                <span id="modal-eff" class="text-emerald-400 font-bold text-sm">--</span>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                <span class="text-slate-400 block mb-1">Factor de Planta</span>
+                                <span id="modal-cf" class="text-sky-400 font-bold text-sm">--</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Lógica JavaScript -->
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-slate-800 glass-panel py-8 text-center text-xs text-slate-400">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+                <p class="font-medium text-slate-300">Plataforma Interactiva de Energías Primarias y Renovables</p>
+                <p class="text-slate-400 mt-0.5">Optimizada para despliegue estático en GitHub Pages</p>
+            </div>
+            <div class="font-mono text-sky-400">
+                HTML5 • Tailwind CSS • Vanilla JS • SVG Vectorial
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
     <script>
-        // Datos de las energías (Enfoque técnico)
-        const energies = [
+        // Energy Data Source
+        const energyDatabase = [
             {
                 id: 'solar',
-                name: 'Energía Solar',
-                subtitle: 'Sistemas Fotovoltaicos y Termosolares',
-                color: 'from-orange-500 to-yellow-400',
-                gradientId: 'grad-solar',
-                svg: `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="svg-gradient-solar" d="M12 3a9 9 0 0 0-9 9h2a7 7 0 0 1 7-7V3zm0 18a9 9 0 0 0 9-9h-2a7 7 0 0 1-7 7v2zm-6-2.5l1.4-1.4A7.05 7.05 0 0 1 5 12H3a9.05 9.05 0 0 0 3 6.5zm12-11L16.6 8.9A7.05 7.05 0 0 1 19 12h2a9.05 9.05 0 0 0-3-6.5zM3 12h18v2H3v-2zm2 4h14v6H5v-6zM7 18h2v2H7v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z"/></svg>`,
-                shortDesc: 'Aprovechamiento de la radiación electromagnética del sol mediante semiconductores.',
-                principle: 'La conversión directa de luz en electricidad se logra mediante el <strong>efecto fotoeléctrico</strong>. Los fotones incidentes excitan los electrones en la banda de valencia de un material semiconductor (como el silicio dopado), promoviéndolos a la banda de conducción y generando pares electrón-hueco.',
-                tech: '<strong>Paneles Fotovoltaicos (PV):</strong> Compuestos por celdas con uniones P-N. Requieren inversores para transformar la corriente continua (DC) en corriente alterna (AC) sincronizada con la red. Tecnologías emergentes incluyen perovskitas y celdas en tándem para superar el límite de Shockley-Queisser.',
-                facts: [
-                    "Eficiencia comercial actual: ~18% - 22% (Silicio monocristalino).",
-                    "Requiere sistemas MPPT (Maximum Power Point Tracking) para optimizar la extracción de potencia bajo irradiancia variable.",
-                    "La energía termosolar (CSP) utiliza espejos para concentrar calor y mover turbinas de vapor clásico."
-                ]
+                name: 'Solar Fotovoltaica y Termosolar',
+                category: 'renovables',
+                categoryLabel: 'Renovable / Variable',
+                subtitle: 'Efecto Fotoeléctrico & Concentración Térmica',
+                colorGrad: 'grad-solar',
+                badgeBg: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                shortDesc: 'Transformación directa de la radiación solar mediante excitación electrónica en uniones semiconductoras P-N.',
+                physics: 'Los fotones incidentes con energía superior al bandgap ($E = h\\nu > E_g$) excitan electrones desde la banda de valencia hacia la banda de conducción en el silicio dopado, creando pares electrón-hueco y produciendo una fuerza electromotriz (DC).',
+                formula: 'Ecuación Fotoeléctrica: E_k = h·ν - Φ | Potencia STC: P_max = V_mpp · I_mpp',
+                components: 'Paneles monocristalinos/policristalinos, inversores de cadena (String Inverters) o centrales, seguidores solares de 1 o 2 ejes, y controladores MPPT.',
+                cases: [
+                    "<strong>Sistemas de Perovskita:</strong> Tándem silicio-perovskita supera teóricamente el límite de Shockley-Queisser (~33.7%) alcanzando eficiencias de laboratorio >32%.",
+                    "<strong>Plantas Termosolares (CSP):</strong> Utilizan helióstatos para concentrar calor en sales fundidas a >560°C, ofreciendo almacenamiento térmico despachable nocturno."
+                ],
+                eff: '18% - 24% (PV)',
+                cf: '20% - 28%',
+                svgIcon: `<svg viewBox="0 0 24 24" class="w-full h-full"><path fill="url(#grad-solar)" d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.65 0-3-1.35-3-3s1.35-3 3-3 3 1.35 3 3-1.35 3-3 3zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1z"/></svg>`,
+                diagramSvg: `<svg viewBox="0 0 400 120" class="w-full max-w-md h-auto">
+                    <rect x="20" y="30" width="120" height="60" rx="6" fill="#1e293b" stroke="#f59e0b" stroke-width="2"/>
+                    <text x="80" y="55" fill="#fbbf24" font-size="10" text-anchor="middle" font-weight="bold">Celda P-N Silicio</text>
+                    <text x="80" y="70" fill="#94a3b8" font-size="8" text-anchor="middle">Fotones → DC</text>
+                    <path d="M 140 60 L 220 60" stroke="#f59e0b" stroke-width="2" stroke-dasharray="3"/>
+                    <rect x="220" y="35" width="80" height="50" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
+                    <text x="260" y="58" fill="#38bdf8" font-size="9" text-anchor="middle" font-weight="bold">Inversor MPPT</text>
+                    <text x="260" y="72" fill="#94a3b8" font-size="8" text-anchor="middle">DC → AC Sincronizada</text>
+                    <path d="M 300 60 L 370 60" stroke="#34d399" stroke-width="2"/>
+                    <text x="335" y="50" fill="#34d399" font-size="8" text-anchor="middle">Red AC</text>
+                </svg>`
             },
             {
                 id: 'wind',
-                name: 'Energía Eólica',
-                subtitle: 'Aerogeneradores y Fluidodinámica',
-                color: 'from-blue-600 to-blue-300',
-                gradientId: 'grad-wind',
-                svg: `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="svg-gradient-wind" d="M12 2C9.243 2 7 4.243 7 7c0 1.25.46 2.39 1.22 3.28L6 14l3.5 2 2.78-4.22c.23.08.47.14.72.19V22h2v-9.97c1.39-.42 2.51-1.46 3.03-2.8l2.97 1.77-1-1.73-3.66-2.12C16.8 5.6 14.65 4 12 4V2zm0 8a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>`,
-                shortDesc: 'Extracción de energía cinética del viento mediante perfiles aerodinámicos.',
-                principle: 'El viento incide sobre las palas del rotor, creando una diferencia de presión (sustentación y arrastre) basada en el principio de Bernoulli. Esta fuerza aerodinámica genera un par motor que hace girar el eje de la turbina.',
-                tech: '<strong>Aerogeneradores:</strong> Sujetas al <em>Límite de Betz</em> (máxima eficiencia teórica del 59.3%). Utilizan generadores síncronos de imanes permanentes (PMSG) o generadores de inducción doblemente alimentados (DFIG) acoplados a multiplicadoras.',
-                facts: [
-                    "<strong>Caso de Estudio: La Guajira, Colombia.</strong> Posee un potencial eólico de clase mundial debido a la presencia constante de los vientos alisios del noreste, con velocidades medias superiores a 9 m/s, superando por mucho el promedio global.",
-                    "Densidad de potencia es proporcional al cubo de la velocidad del viento (P ∝ v³).",
-                    "Desarrollo creciente en parques eólicos <em>Offshore</em> (marinos) por la menor rugosidad del terreno y vientos más laminares."
-                ]
+                name: 'Eólica Onshore & Offshore',
+                category: 'renovables',
+                categoryLabel: 'Renovable / Variable',
+                subtitle: 'Sustentación Aerodinámica & Límite de Betz',
+                colorGrad: 'grad-wind',
+                badgeBg: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+                shortDesc: 'Captura de la energía cinética del viento mediante perfiles aerodinámicos conectados a generadores síncronos.',
+                physics: 'El viento genera una diferencia de presiones sobre las palas (fuerza de sustentación de Bernoulli). La potencia extraíble es proporcional al cubo de la velocidad del viento ($P = \\frac{1}{2}\\rho A v^3 C_p$). El límite teórico máximo de eficiencia aerodinámica es el Límite de Betz ($C_p = 59.3\\%$).',
+                formula: 'Ecuación de Potencia: P = 0.5 · ρ · A · v³ · C_p(λ, θ)',
+                components: 'Rotor con palas de fibra de vidrio, multiplicadora (o Direct-Drive), generador DFIG o PMSG, convertidor de potencia de escala completa y sistema Pitch/Yaw.',
+                cases: [
+                    "<strong>Caso La Guajira (Colombia):</strong> Región costera con vientos alisios constantes de clase mundial (>9 m/s promedio anual) y dirección uniforme, ideal para parques de alta eficiencia.",
+                    "<strong>Aerogeneradores Offshore Gigantes:</strong> Turbinas marinas de >15 MW con rotores de más de 220 metros de diámetro."
+                ],
+                eff: '40% - 50% (Rotor)',
+                cf: '35% - 55%',
+                svgIcon: `<svg viewBox="0 0 24 24" class="w-full h-full"><path fill="url(#grad-wind)" d="M12 2a1 1 0 0 0-1 1v8.086l-5.717-3.3-1 1.732 5.717 3.3L4.283 16.12l1 1.732 5.717-3.3V21a1 1 0 1 0 2 0v-6.448l5.717 3.3 1-1.732-5.717-3.3 5.717-3.3-1-1.732-5.717 3.3V3a1 1 0 0 0-1-1z"/></svg>`,
+                diagramSvg: `<svg viewBox="0 0 400 120" class="w-full max-w-md h-auto">
+                    <circle cx="60" cy="60" r="30" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4"/>
+                    <text x="60" y="63" fill="#38bdf8" font-size="9" text-anchor="middle" font-weight="bold">Rotor Palas</text>
+                    <path d="M 90 60 L 160 60" stroke="#38bdf8" stroke-width="2"/>
+                    <rect x="160" y="40" width="90" height="40" rx="6" fill="#1e293b" stroke="#0284c7" stroke-width="1.5"/>
+                    <text x="205" y="58" fill="#f8fafc" font-size="8" text-anchor="middle">Generador PMSG</text>
+                    <text x="205" y="70" fill="#94a3b8" font-size="7" text-anchor="middle">Direct-Drive / DFIG</text>
+                    <path d="M 250 60 L 320 60" stroke="#34d399" stroke-width="2"/>
+                    <rect x="320" y="40" width="60" height="40" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+                    <text x="350" y="63" fill="#34d399" font-size="8" text-anchor="middle">Red AC</text>
+                </svg>`
             },
             {
                 id: 'nuclear',
                 name: 'Energía Nuclear',
-                subtitle: 'Fisión, Reactores y Física de Partículas',
-                color: 'from-green-600 to-green-300',
-                gradientId: 'grad-nuclear',
-                svg: `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="svg-gradient-nuclear" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><circle cx="12" cy="12" r="3" class="svg-gradient-nuclear"/><path class="svg-gradient-nuclear" d="M12 5.5c-3.59 0-6.5 2.91-6.5 6.5 0 .8.17 1.56.46 2.26l1.3-1.3C7.1 12.65 7 12.33 7 12c0-2.76 2.24-5 5-5 .33 0 .65.09.96.26l1.3-1.3A6.47 6.47 0 0 0 12 5.5zm4.04 1.7l-1.3 1.3c.69.49 1.25 1.14 1.6 1.9h1.86c-.43-1.28-1.2-2.38-2.16-3.2zm-8.08 9.6l1.3-1.3c-.69-.49-1.25-1.14-1.6-1.9H5.8c.43 1.28 1.2 2.38 2.16 3.2zm9.24-.16c-.29.7-.8 1.33-1.42 1.83l1.3 1.3c.89-.73 1.58-1.68 1.98-2.76h-1.86a4.95 4.95 0 0 1 0-.37z"/></svg>`,
-                shortDesc: 'Generación térmica de carga base mediante reacciones de fisión controladas.',
-                principle: 'Liberación masiva de energía (E=mc²) al romper núcleos pesados (como el Uranio-235) mediante el bombardeo de neutrones térmicos. La reacción en cadena controlada genera calor que vaporiza agua para mover una turbina.',
-                tech: '<strong>Reactores de Potencia:</strong> Predominan los PWR (Agua Presurizada) y BWR (Agua en Ebullición). Requieren moderadores (agua, grafito) para frenar neutrones y barras de control (cadmio, boro) para regular la reacción.',
-                facts: [
-                    "Densidad energética extrema: Un pellet de uranio (~7g) equivale a 1 tonelada de carbón.",
-                    "<strong>Hitos:</strong> Evolución hacia reactores de Generación III+ (sistemas de seguridad pasivos) y SMR (Small Modular Reactors) para mayor flexibilidad.",
-                    "<strong>El Futuro (Fusión):</strong> Proyectos como el ITER buscan dominar la fusión nuclear (confinamiento magnético de plasma), prometiendo energía limpia casi ilimitada."
-                ]
+                category: 'carga-base',
+                categoryLabel: 'Carga Base / Baja en Carbono',
+                subtitle: 'Fisión Controlada de U-235 & Ciclos Térmicos Rankine',
+                colorGrad: 'grad-nuclear',
+                badgeBg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                shortDesc: 'Generación masiva de calor continuo mediante la división neutrónica de núcleos pesados de Uranio.',
+                physics: 'La fisión nuclear liberada según la equivalencia masa-energía de Einstein ($E = \\Delta m · c^2$) calienta el refrigerante primario. Los neutrones lentos (térmicos) provocan la fisión en cadena sostenida regulada por barras de absorbedores de neutrones.',
+                formula: 'Equivalencia Masa-Energía: ΔE = Δm · c² | Densidad Energética: ~3,900 GJ / kg U-235',
+                components: 'Vasija de presión del reactor, barras de combustible (UO2), moderador de agua/grafito, barras de control (Boro/Cadmio), generador de vapor y turbina Rankine.',
+                cases: [
+                    "<strong>Evolución a SMRs (Reactores Modulares Pequeños):</strong> Unidades de 50 a 300 MW construidas en fábrica con sistemas de seguridad pasivos independientes de energía externa.",
+                    "<strong>El Hito de la Fusión (ITER & NIF):</strong> Proyectos de confinamiento magnético (Tokamak) en busca de la ganancia neta de energía ($Q > 1$) con deuterio-tritio."
+                ],
+                eff: '33% - 38% (Térmica)',
+                cf: '90% - 95%',
+                svgIcon: `<svg viewBox="0 0 24 24" class="w-full h-full"><path fill="url(#grad-nuclear)" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><circle cx="12" cy="12" r="3" fill="url(#grad-nuclear)"/></svg>`,
+                diagramSvg: `<svg viewBox="0 0 400 120" class="w-full max-w-md h-auto">
+                    <rect x="20" y="25" width="100" height="70" rx="8" fill="#1e293b" stroke="#4ade80" stroke-width="2"/>
+                    <text x="70" y="55" fill="#4ade80" font-size="9" text-anchor="middle" font-weight="bold">Reactor PWR</text>
+                    <text x="70" y="70" fill="#94a3b8" font-size="8" text-anchor="middle">Fisión Uranio</text>
+                    <path d="M 120 60 L 200 60" stroke="#f87171" stroke-width="2"/>
+                    <rect x="200" y="30" width="80" height="60" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
+                    <text x="240" y="55" fill="#38bdf8" font-size="8" text-anchor="middle">Gen. Vapor</text>
+                    <text x="240" y="70" fill="#94a3b8" font-size="7" text-anchor="middle">Circuito Secundario</text>
+                    <path d="M 280 60 L 350 60" stroke="#34d399" stroke-width="2"/>
+                    <text x="315" y="50" fill="#34d399" font-size="8" text-anchor="middle">Turbina AC</text>
+                </svg>`
             },
             {
                 id: 'hydro',
-                name: 'Hidroeléctrica',
-                subtitle: 'Turbomáquinas y Alturas de Caída',
-                color: 'from-cyan-600 to-cyan-300',
-                gradientId: 'grad-hydro',
-                svg: `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="svg-gradient-hydro" d="M12 2.3l-8.6 10c-.5.6-.8 1.3-.8 2.2 0 2.6 2.1 4.7 4.7 4.7 1.7 0 3.2-.9 4-2.3.8 1.4 2.3 2.3 4 2.3 2.6 0 4.7-2.1 4.7-4.7 0-.9-.3-1.6-.8-2.2l-8.6-10H12zm0 3.8l6.3 7.3c.2.2.4.6.4.9 0 1.5-1.2 2.7-2.7 2.7-1 0-1.9-.6-2.4-1.5H10.4c-.5.9-1.4 1.5-2.4 1.5-1.5 0-2.7-1.2-2.7-2.7 0-.3.1-.7.4-.9L12 6.1zM3 21h18v2H3v-2z"/></svg>`,
-                shortDesc: 'Aprovechamiento de la energía potencial gravitatoria de masas de agua.',
-                principle: 'Conversión de la energía potencial del agua almacenada en altura (salto o carga) en energía cinética al fluir por una tubería forzada, y finalmente en energía mecánica rotacional en la turbina.',
-                tech: '<strong>Turbinas Hidráulicas:</strong> La selección depende del salto y caudal. <em>Pelton:</em> Acción, altos saltos, bajo caudal. <em>Francis:</em> Reacción, saltos medios, caudales medios (las más comunes). <em>Kaplan:</em> Reacción, bajos saltos, altos caudales (flujo axial).',
-                facts: [
-                    "Alta inercia síncrona: Proveen una excelente estabilidad y regulación de frecuencia a las redes eléctricas interconectadas.",
-                    "Las centrales de bombeo (Pumped-storage) actúan como las baterías más grandes del mundo, almacenando energía en horas valle.",
-                    "Eficiencia mecánica global del sistema muy alta (a menudo >90%)."
-                ]
+                name: 'Hidroeléctrica & Centrales de Bombeo',
+                category: 'renovables',
+                categoryLabel: 'Renovable / Despachable',
+                subtitle: 'Energía Potencial Gravitatoria & Turbomáquinas',
+                colorGrad: 'grad-hydro',
+                badgeBg: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+                shortDesc: 'Aprovechamiento del salto de agua para convertir energía potencial en energía mecánica de rotación.',
+                physics: 'La columna de agua crea una presión hidrostática ($P = \\rho g H$). Al fluir por la tubería forzada, la energía potencial hidráulica se transforma en energía cinética y par motor sobre el rodete.',
+                formula: 'Potencia Hidráulica: P = η · ρ · g · Q · H_neta',
+                components: 'Presa de embalse, tubería forzada (Penstock), turbinas Francis (salto medio), Pelton (salto alto) o Kaplan (flujo axial), y generadores síncronos de polos salientes.',
+                cases: [
+                    "<strong>Centrales de Rebombeo (Pumped Hydro Storage):</strong> La tecnología de almacenamiento a gran escala más madura del mundo, bombeando agua en horas valle y generando en horas pico.",
+                    "<strong>Alta Inercia Eléctrica:</strong> Sus enormes rotores giratorios proveen inercia física crucial para estabilizar la frecuencia de la red (50/60 Hz)."
+                ],
+                eff: '85% - 92%',
+                cf: '40% - 65%',
+                svgIcon: `<svg viewBox="0 0 24 24" class="w-full h-full"><path fill="url(#grad-hydro)" d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`,
+                diagramSvg: `<svg viewBox="0 0 400 120" class="w-full max-w-md h-auto">
+                    <path d="M 20 20 L 80 100 L 140 100" fill="none" stroke="#22d3ee" stroke-width="3"/>
+                    <text x="60" y="40" fill="#22d3ee" font-size="8">Salto H</text>
+                    <rect x="140" y="70" width="80" height="40" rx="6" fill="#1e293b" stroke="#0284c7" stroke-width="1.5"/>
+                    <text x="180" y="90" fill="#f8fafc" font-size="8" text-anchor="middle">Turbina Francis/Pelton</text>
+                    <path d="M 220 90 L 310 90" stroke="#34d399" stroke-width="2"/>
+                    <text x="265" y="80" fill="#34d399" font-size="8" text-anchor="middle">Eje Gen. Síncrono</text>
+                </svg>`
             },
             {
                 id: 'geo',
                 name: 'Geotérmica',
-                subtitle: 'Termodinámica Endógena',
-                color: 'from-red-600 to-red-400',
-                gradientId: 'grad-geo',
-                svg: `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="svg-gradient-geo" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path class="svg-gradient-geo" d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.65 0-3-1.35-3-3s1.35-3 3-3 3 1.35 3 3-1.35 3-3 3zm-2.5-1.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5-1.5-.67-1.5-1.5z"/><path class="svg-gradient-geo" d="M9 12c0-1.66 1.34-3 3-3s3 1.34 3 3"/></svg>`,
-                shortDesc: 'Explotación del calor interior de la corteza terrestre para ciclos termodinámicos.',
-                principle: 'Extracción del calor del magma o decaimiento radiactivo en el subsuelo. Los fluidos geotérmicos (agua líquida a alta presión o vapor) se extraen a la superficie. La caída de presión provoca la vaporización (flashing) que mueve la turbina.',
-                tech: '<strong>Plantas Geotérmicas:</strong> Dependiendo de la entalpía del recurso, se usan plantas de vapor seco, de vapor de destello (Flash Steam) para fluidos bifásicos, o plantas de Ciclo Binario (donde el calor se transfiere a un fluido de trabajo orgánico con menor punto de ebullición).',
-                facts: [
-                    "Factor de planta sumamente alto (>90%), funcionando como energía de carga base independiente del clima.",
-                    "Requiere reinyección de la salmuera extraída para mantener la presión del reservorio y mitigar impactos ambientales.",
-                    "Sistemas Geotérmicos Mejorados (EGS) prometen expandir esta tecnología a zonas sin acuíferos naturales fracturando roca caliente profunda."
-                ]
+                category: 'carga-base',
+                categoryLabel: 'Renovable / Carga Base',
+                subtitle: 'Gradiente Geotérmico & Ciclos Orgánicos Rankine (ORC)',
+                colorGrad: 'grad-geo',
+                badgeBg: 'bg-red-500/10 text-red-400 border-red-500/20',
+                shortDesc: 'Extracción del calor endógeno de la Tierra almacenado en rocas y fluidos subsuperficiales.',
+                physics: 'El flujo de calor interno proviene del decaimiento radiactivo de isótopos en el manto/corteza ($U, Th, K$) y calor remanente de formación. En yacimientos de alta entalpía, la despresurización genera vapor seco o flash steam.',
+                formula: 'Flujo de Calor por Conducción: q = -k · (dT / dz)',
+                components: 'Pozos de producción y reinyección, separadores de fase de vapor, turbinas de vapor o cambiadores de calor para ciclo binario ORC.',
+                cases: [
+                    "<strong>Sistemas Geotérmicos Mejorados (EGS):</strong> Estimulación hidráulica de roca caliente seca a alta profundidad para crear permeabilidad artificial.",
+                    "<strong>Uso Directo:</strong> Calefacción urbana de distritos y procesos industriales descarbonizados."
+                ],
+                eff: '12% - 20% (Térmica)',
+                cf: '85% - 92%',
+                svgIcon: `<svg viewBox="0 0 24 24" class="w-full h-full"><path fill="url(#grad-geo)" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><circle cx="12" cy="12" r="4" fill="url(#grad-geo)"/></svg>`,
+                diagramSvg: `<svg viewBox="0 0 400 120" class="w-full max-w-md h-auto">
+                    <rect x="30" y="70" width="100" height="35" rx="4" fill="#991b1b" stroke="#f87171" stroke-width="1.5"/>
+                    <text x="80" y="90" fill="#f8fafc" font-size="8" text-anchor="middle">Yacimiento >200°C</text>
+                    <path d="M 80 70 L 80 30 L 180 30" stroke="#f87171" stroke-width="2"/>
+                    <rect x="180" y="15" width="90" height="40" rx="6" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+                    <text x="225" y="38" fill="#38bdf8" font-size="8" text-anchor="middle">Turbina Flash Steam</text>
+                </svg>`
+            },
+            {
+                id: 'biomass',
+                name: 'Biomasa & Biogás',
+                category: 'renovables',
+                categoryLabel: 'Renovable / Despachable',
+                subtitle: 'Ciclo Neutro de Carbono & Digestión Anaerobia',
+                colorGrad: 'grad-bio',
+                badgeBg: 'bg-lime-500/10 text-lime-400 border-lime-500/20',
+                shortDesc: 'Aprovechamiento de materia orgánica (agrícola, forestal o residual) mediante combustión o gasificación.',
+                physics: 'Fotosíntesis previa fija CO₂ atmosférico. Su conversión libera energía química almacenada. En ausencia de oxígeno, las bacterias metanogénicas convierten materia orgánica en biogás ($CH_4 + CO_2$).',
+                formula: 'Digestión Anaerobia: C_6H_{12}O_6 → 3CH_4 + 3CO_2',
+                components: 'Biodigestores anaerobios, gasificadores de lecho fluidizado, calderas de biomasa y motores de digestión de cogeneración (CHP).',
+                cases: [
+                    "<strong>BECCS (Bioenergy with CCS):</strong> Biomasa combinada con captura y almacenamiento de carbono para lograr emisiones netas negativas.",
+                    "<strong>Biometano:</strong> Purificación de biogás (Upgrading) para inyección directa en redes de gas natural."
+                ],
+                eff: '25% - 35%',
+                cf: '65% - 85%',
+                svgIcon: `<svg viewBox="0 0 24 24" class="w-full h-full"><path fill="url(#grad-bio)" d="M17 8C8 10 59 16 17 22 17 22 3 18 3 8c0-2.5 2-4.5 4.5-4.5C10 3.5 12 5 12 5s2-1.5 4.5-1.5C19 3.5 21 5.5 21 8c0 1.5-.5 3-1 4z"/></svg>`,
+                diagramSvg: `<svg viewBox="0 0 400 120" class="w-full max-w-md h-auto">
+                    <rect x="30" y="30" width="100" height="60" rx="8" fill="#1e293b" stroke="#a3e635" stroke-width="1.5"/>
+                    <text x="80" y="55" fill="#a3e635" font-size="9" text-anchor="middle" font-weight="bold">Biodigestor</text>
+                    <text x="80" y="70" fill="#94a3b8" font-size="8" text-anchor="middle">Metanogénesis</text>
+                    <path d="M 130 60 L 220 60" stroke="#a3e635" stroke-width="2"/>
+                    <rect x="220" y="35" width="100" height="50" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
+                    <text x="270" y="58" fill="#38bdf8" font-size="8" text-anchor="middle">Motor CHP / Gas</text>
+                </svg>`
+            },
+            {
+                id: 'fossil',
+                name: 'Combustibles Fósiles & Transición',
+                category: 'fósiles',
+                categoryLabel: 'Convencional / Emisiones Altes',
+                subtitle: 'Ciclos Combinados Gas (CCGT) & Carbón',
+                colorGrad: 'grad-fossil',
+                badgeBg: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
+                shortDesc: 'Oxidación de hidrocarburos extraídos del subsuelo. Requieren acelerada descarbonización.',
+                physics: 'Combustión exotérmica de enlaces C-H liberando calor, H₂O y CO₂. Los Ciclos Combinados unen una turbina de gas (Brayton) con una turbina de vapor (Rankine) aprovechando el calor residual de escape.',
+                formula: 'Combustión Metano: CH_4 + 2O_2 → CO_2 + 2H_2O + 891 kJ/mol',
+                components: 'Turbinas de gas de alta temperatura (>1400°C), Caldera de Recuperación de Calor (HRSG), turbinas de vapor y sistemas de filtrado de gases NOx/SOx.',
+                cases: [
+                    "<strong>Rol de Respaldo en la Transición:</strong> Las turbinas de gas ofrecen alta velocidad de rampa para cubrir variaciones bruscas de energía solar/eólica.",
+                    "<strong>Tecnología CCUS:</strong> Captura post-combustión de CO₂ en aminas para ser inyectado en formaciones geológicas profundas."
+                ],
+                eff: '58% - 63% (CCGT)',
+                cf: '50% - 85%',
+                svgIcon: `<svg viewBox="0 0 24 24" class="w-full h-full"><path fill="url(#grad-fossil)" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>`,
+                diagramSvg: `<svg viewBox="0 0 400 120" class="w-full max-w-md h-auto">
+                    <rect x="20" y="30" width="90" height="50" rx="6" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/>
+                    <text x="65" y="55" fill="#f8fafc" font-size="8" text-anchor="middle">Turbina Gas (Brayton)</text>
+                    <path d="M 110 55 L 180 55" stroke="#f87171" stroke-width="2"/>
+                    <rect x="180" y="30" width="80" height="50" rx="6" fill="#0f172a" stroke="#f59e0b" stroke-width="1.5"/>
+                    <text x="220" y="50" fill="#f59e0b" font-size="8" text-anchor="middle">HRSG Caldera</text>
+                    <path d="M 260 55 L 320 55" stroke="#38bdf8" stroke-width="2"/>
+                    <text x="350" y="55" fill="#38bdf8" font-size="8" text-anchor="middle">Turb. Vapor</text>
+                </svg>`
             }
         ];
 
-        const gridContainer = document.getElementById('energy-grid');
+        // Render Energy Cards
+        function renderCards(filter = 'all') {
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '';
 
-        // Generar las tarjetas
-        energies.forEach((energy, index) => {
-            const delay = 0.2 + (index * 0.1);
-            const card = document.createElement('div');
-            card.className = `bg-slate-800 rounded-2xl p-6 border border-slate-700 fade-in-up card-hover cursor-pointer group flex flex-col h-full`;
-            card.style.animationDelay = `${delay}s`;
-            card.onclick = () => openModal(energy.id);
+            const filteredData = filter === 'all' 
+                ? energyDatabase 
+                : energyDatabase.filter(item => item.category === filter);
 
-            card.innerHTML = `
-                <div class="w-16 h-16 mb-6 p-3 rounded-2xl bg-slate-700/50 group-hover:scale-110 transition-transform duration-300">
-                    ${energy.svg}
-                </div>
-                <h3 class="text-2xl font-bold mb-2 text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:${energy.color} transition-all">
-                    ${energy.name}
-                </h3>
-                <h4 class="text-sm text-slate-400 mb-4 font-semibold uppercase tracking-wider">${energy.subtitle}</h4>
-                <p class="text-slate-300 mb-6 flex-grow">
-                    ${energy.shortDesc}
-                </p>
-                <div class="mt-auto">
-                    <button class="w-full py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2 group-hover:bg-slate-600">
-                        Ver Detalles Técnicos
-                        <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                    </button>
-                </div>
-            `;
-            gridContainer.appendChild(card);
-        });
+            filteredData.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'glass-card rounded-2xl p-6 cursor-pointer flex flex-col justify-between group';
+                card.onclick = () => openModal(item.id);
 
-        // Lógica del Modal
-        const modalOverlay = document.getElementById('modal-overlay');
-        const modalTitle = document.getElementById('modal-title');
-        const modalSubtitle = document.getElementById('modal-subtitle');
-        const modalIcon = document.getElementById('modal-icon-container');
-        const modalPrinciple = document.getElementById('modal-principle');
-        const modalTech = document.getElementById('modal-tech');
-        const modalFacts = document.getElementById('modal-facts');
-        const modalBgGradient = document.getElementById('modal-bg-gradient');
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-5">
+                            <div class="w-14 h-14 p-2.5 rounded-2xl bg-slate-900 border border-slate-800 group-hover:border-sky-500/40 transition-colors">
+                                ${item.svgIcon}
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-[11px] font-mono border ${item.badgeBg}">
+                                ${item.categoryLabel}
+                            </span>
+                        </div>
+                        <h3 class="text-xl font-bold text-white group-hover:text-sky-400 transition-colors">
+                            ${item.name}
+                        </h3>
+                        <p class="text-xs font-mono text-slate-400 mt-1 mb-3">${item.subtitle}</p>
+                        <p class="text-slate-300 text-sm leading-relaxed mb-6">
+                            ${item.shortDesc}
+                        </p>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-800/80 flex items-center justify-between">
+                        <div class="text-xs font-mono">
+                            <span class="text-slate-400">Eficiencia:</span>
+                            <span class="text-emerald-400 font-bold ml-1">${item.eff}</span>
+                        </div>
+                        <span class="text-xs font-semibold text-sky-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                            Detalles Técnicos
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Category Filter Handling
+        function filterCategory(category) {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.getAttribute('data-cat') === category) {
+                    btn.className = 'filter-btn active px-4 py-2 rounded-xl text-xs font-semibold bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20 transition-all';
+                } else {
+                    btn.className = 'filter-btn px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all border border-slate-700';
+                }
+            });
+            renderCards(category);
+        }
+
+        // Modal Handling
+        const modal = document.getElementById('tech-modal');
+        const modalContainer = document.getElementById('modal-container');
 
         function openModal(id) {
-            const energy = energies.find(e => e.id === id);
-            if (!energy) return;
+            const data = energyDatabase.find(e => e.id === id);
+            if (!data) return;
 
-            // Poblar datos
-            modalTitle.textContent = energy.name;
-            modalSubtitle.textContent = energy.subtitle;
-            modalIcon.innerHTML = energy.svg;
-            modalPrinciple.innerHTML = energy.principle;
-            modalTech.innerHTML = energy.tech;
-            
-            // Poblar lista de hechos
-            modalFacts.innerHTML = energy.facts.map(fact => `
-                <li class="flex items-start gap-3">
-                    <svg class="w-5 h-5 text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span>${fact}</span>
+            document.getElementById('modal-title').textContent = data.name;
+            document.getElementById('modal-subtitle').textContent = data.subtitle;
+            document.getElementById('modal-badge').textContent = data.categoryLabel;
+            document.getElementById('modal-icon').innerHTML = data.svgIcon;
+            document.getElementById('modal-physics').innerHTML = data.physics;
+            document.getElementById('modal-formula-box').innerHTML = `<code>${data.formula}</code>`;
+            document.getElementById('modal-components').innerHTML = data.components;
+            document.getElementById('modal-eff').textContent = data.eff;
+            document.getElementById('modal-cf').textContent = data.cf;
+            document.getElementById('modal-svg-diagram').innerHTML = data.diagramSvg;
+
+            const casesList = document.getElementById('modal-cases');
+            casesList.innerHTML = data.cases.map(c => `
+                <li class="flex items-start gap-2.5">
+                    <span class="text-sky-400 shrink-0 mt-0.5">•</span>
+                    <span>${c}</span>
                 </li>
             `).join('');
 
-            // Aplicar gradiente temático
-            modalBgGradient.className = `absolute inset-0 opacity-10 bg-gradient-to-r ${energy.color}`;
-            modalTitle.className = `text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r ${energy.color}`;
-
-            // Mostrar modal
-            modalOverlay.classList.remove('hidden-modal');
-            modalOverlay.classList.add('active-modal');
-            document.body.style.overflow = 'hidden'; // Prevenir scroll fondo
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modalContainer.classList.remove('scale-95');
+            modalContainer.classList.add('scale-100');
+            document.body.style.overflow = 'hidden';
         }
 
         function closeModal() {
-            modalOverlay.classList.remove('active-modal');
-            modalOverlay.classList.add('hidden-modal');
-            document.body.style.overflow = 'auto'; // Restaurar scroll
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modalContainer.classList.remove('scale-100');
+            modalContainer.classList.add('scale-95');
+            document.body.style.overflow = 'auto';
         }
 
-        // Cerrar modal al hacer clic afuera
-        modalOverlay.addEventListener('click', (e) => {
-            if (e.target === modalOverlay) {
-                closeModal();
+        // Energy Mix Simulator Logic
+        function updateSimulator() {
+            const solar = parseInt(document.getElementById('sim-solar').value);
+            const wind = parseInt(document.getElementById('sim-wind').value);
+            const hydro = parseInt(document.getElementById('sim-hydro').value);
+            const nuclear = parseInt(document.getElementById('sim-nuclear').value);
+            const gas = parseInt(document.getElementById('sim-gas').value);
+
+            const total = solar + wind + hydro + nuclear + gas;
+            
+            // Normalize scale labels
+            document.getElementById('val-solar').textContent = solar;
+            document.getElementById('val-wind').textContent = wind;
+            document.getElementById('val-hydro').textContent = hydro;
+            document.getElementById('val-nuclear').textContent = nuclear;
+            document.getElementById('val-gas').textContent = gas;
+
+            const basePowerGW = 50; // 50 GW base network assumption
+            document.getElementById('gw-solar').textContent = (basePowerGW * (solar/100)).toFixed(1) + ' GW';
+            document.getElementById('gw-wind').textContent = (basePowerGW * (wind/100)).toFixed(1) + ' GW';
+            document.getElementById('gw-hydro').textContent = (basePowerGW * (hydro/100)).toFixed(1) + ' GW';
+            document.getElementById('gw-nuclear').textContent = (basePowerGW * (nuclear/100)).toFixed(1) + ' GW';
+            document.getElementById('gw-gas').textContent = (basePowerGW * (gas/100)).toFixed(1) + ' GW';
+
+            // Badge total
+            const badge = document.getElementById('total-share-badge');
+            badge.textContent = `${total}% Total`;
+            if (total === 100) {
+                badge.className = "px-2.5 py-1 rounded-full text-xs font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+            } else {
+                badge.className = "px-2.5 py-1 rounded-full text-xs font-mono bg-amber-500/20 text-amber-400 border border-amber-500/30";
             }
+
+            // CO2 calculation (weighted gCO2/kWh)
+            // Solar: 40, Wind: 11, Hydro: 24, Nuclear: 12, Gas: 450
+            const co2Weighted = Math.round((solar*40 + wind*11 + hydro*24 + nuclear*12 + gas*450) / (total || 1));
+            document.getElementById('sim-co2-val').textContent = `${co2Weighted} gCO₂/kWh`;
+            
+            const co2Percent = Math.min(100, Math.max(5, (co2Weighted / 450) * 100));
+            document.getElementById('bar-co2').style.width = `${co2Percent}%`;
+
+            // Stability Calculation (Baseload / Synchronous inertia = Hydro + Nuclear + Gas)
+            const baseloadShare = Math.round(((hydro + nuclear + gas) / (total || 1)) * 100);
+            document.getElementById('sim-stability-val').textContent = `${baseloadShare}% Firmeza Sync`;
+            document.getElementById('bar-stability').style.width = `${baseloadShare}%`;
+
+            // Land Use Calculation (km² per GW: Solar~20, Wind~50, Hydro~30, Nuclear~1, Gas~1)
+            const landKm2 = Math.round((solar*0.5 * 20) + (wind*0.5 * 45) + (hydro*0.5 * 25) + (nuclear*0.5 * 1) + (gas*0.5 * 1));
+            document.getElementById('sim-land-val').textContent = `~${landKm2.toLocaleString()} km²`;
+
+            // Diagnostic feedback
+            const diag = document.getElementById('sim-diagnostic');
+            if (baseloadShare < 25) {
+                diag.textContent = "⚠️ Riesgo de inestabilidad de red por baja inercia síncrona. Se requieren baterías masivas o compensadores síncronos.";
+            } else if (co2Weighted > 200) {
+                diag.textContent = "🚨 Intensidad de carbono elevada debido a la alta dependencia de combustibles fósiles.";
+            } else if (total !== 100) {
+                diag.textContent = "ℹ️ Ajusta los porcentajes para que la suma total sea exactamente 100%.";
+            } else {
+                diag.textContent = "✅ Matriz equilibrada con alta penetración limpia y soporte de firmeza síncrona adecuado.";
+            }
+        }
+
+        // Close modal on click outside or Escape key
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
         });
 
-        // Cerrar modal con tecla Escape
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && modalOverlay.classList.contains('active-modal')) {
-                closeModal();
-            }
+            if (e.key === 'Escape') closeModal();
         });
 
+        // Initial Load
+        window.onload = function() {
+            renderCards('all');
+            updateSimulator();
+        };
     </script>
 </body>
 </html>
