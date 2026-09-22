@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energías Primarias y Alternativas | Enfoque de Ingeniería</title>
+    <!-- Cargando Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #f8fafc; /* Slate 50 */
+            overflow-x: hidden;
+        }
+
+        /* Animaciones suaves */
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Degradados para iconos */
+        .svg-gradient-solar { fill: url(#grad-solar); }
+        .svg-gradient-wind { fill: url(#grad-wind); }
+        .svg-gradient-nuclear { fill: url(#grad-nuclear); }
+        .svg-gradient-hydro { fill: url(#grad-hydro); }
+        .svg-gradient-geo { fill: url(#grad-geo); }
+
+        /* Estilos del modal */
+        #modal-overlay {
+            backdrop-filter: blur(8px);
+            transition: opacity 0.3s ease;
+        }
+        
+        #modal-content {
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+        }
+
+        .hidden-modal {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .hidden-modal #modal-content {
+            transform: scale(0.9) translateY(20px);
+        }
+
+        .active-modal {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .active-modal #modal-content {
+            transform: scale(1) translateY(0);
+        }
+
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body class="antialiased min-h-screen relative">
+
+    <!-- Definición de gradientes SVG para reutilizar en los iconos -->
+    <svg style="width:0;height:0;position:absolute;" aria-hidden="true" focusable="false">
+      <linearGradient id="grad-solar" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#FDE047" />
+        <stop offset="100%" stop-color="#EA580C" />
+      </linearGradient>
+      <linearGradient id="grad-wind" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#93C5FD" />
+        <stop offset="100%" stop-color="#2563EB" />
+      </linearGradient>
+      <linearGradient id="grad-nuclear" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#86EFAC" />
+        <stop offset="100%" stop-color="#16A34A" />
+      </linearGradient>
+      <linearGradient id="grad-hydro" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#67E8F9" />
+        <stop offset="100%" stop-color="#0891B2" />
+      </linearGradient>
+      <linearGradient id="grad-geo" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#FCA5A5" />
+        <stop offset="100%" stop-color="#DC2626" />
+      </linearGradient>
+    </svg>
+
+    <!-- Header / Hero Section -->
+    <header class="relative pt-20 pb-12 text-center px-4 overflow-hidden">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-blue-900/40 via-slate-900 to-slate-900 -z-10"></div>
+        <div class="max-w-4xl mx-auto fade-in-up" style="animation-delay: 0.1s;">
+            <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-300">
+                Matriz Energética del Futuro
+            </h1>
+            <p class="text-lg md:text-xl text-slate-300 font-light mb-8 max-w-2xl mx-auto">
+                Análisis técnico de energías primarias y alternativas. Fundamentos termodinámicos, eléctricos y el panorama de transición energética para la ingeniería.
+            </p>
+        </div>
+    </header>
+
+    <!-- Grid de Energías -->
+    <main class="max-w-7xl mx-auto px-4 pb-20">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="energy-grid">
+            <!-- Las tarjetas se insertarán dinámicamente vía JavaScript -->
+        </div>
+    </main>
+
+    <!-- Modal de Detalles Técnicos -->
+    <div id="modal-overlay" class="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-4 hidden-modal">
+        <div id="modal-content" class="bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto relative">
+            
+            <!-- Botón Cerrar -->
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-600 rounded-full p-2 transition-colors z-10">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+
+            <!-- Cabecera del Modal -->
+            <div id="modal-header" class="p-8 border-b border-slate-700 flex flex-col md:flex-row items-center gap-6 relative overflow-hidden">
+                <div class="absolute inset-0 opacity-20" id="modal-bg-gradient"></div>
+                <div id="modal-icon-container" class="w-24 h-24 shrink-0 relative z-10"></div>
+                <div class="relative z-10 text-center md:text-left">
+                    <h2 id="modal-title" class="text-3xl font-bold text-white mb-2"></h2>
+                    <p id="modal-subtitle" class="text-slate-300 font-medium"></p>
+                </div>
+            </div>
+
+            <!-- Contenido Técnico del Modal -->
+            <div class="p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-xl font-semibold text-teal-400 mb-3 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            Principio de Funcionamiento
+                        </h3>
+                        <p id="modal-principle" class="text-slate-300 leading-relaxed mb-6"></p>
+
+                        <h3 class="text-xl font-semibold text-teal-400 mb-3 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+                            Tecnología Clave
+                        </h3>
+                        <p id="modal-tech" class="text-slate-300 leading-relaxed"></p>
+                    </div>
+                    
+                    <div class="bg-slate-900/50 p-6 rounded-xl border border-slate-700 h-fit">
+                        <h3 class="text-lg font-semibold text-blue-400 mb-3">Datos Relevantes & Casos</h3>
+                        <ul id="modal-facts" class="space-y-3 text-slate-300 text-sm">
+                            <!-- Lista dinámica -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lógica JavaScript -->
+    <script>
+        // Datos de las energías (Enfoque técnico)
+        const energies = [
+            {
+                id: 'solar',
+                name: 'Energía Solar',
+                subtitle: 'Sistemas Fotovoltaicos y Termosolares',
+                color: 'from-orange-500 to-yellow-400',
+                gradientId: 'grad-solar',
+                svg: `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="svg-gradient-solar" d="M12 3a9 9 0 0 0-9 9h2a7 7 0 0 1 7-7V3zm0 18a9 9 0 0 0 9-9h-2a7 7 0 0 1-7 7v2zm-6-2.5l1.4-1.4A7.05 7.05 0 0 1 5 12H3a9.05 9.05 0 0 0 3 6.5zm12-11L16.6 8.9A7.05 7.05 0 0 1 19 12h2a9.05 9.05 0 0 0-3-6.5zM3 12h18v2H3v-2zm2 4h14v6H5v-6zM7 18h2v2H7v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z"/></svg>`,
+                shortDesc: 'Aprovechamiento de la radiación electromagnética del sol mediante semiconductores.',
+                principle: 'La conversión directa de luz en electricidad se logra mediante el <strong>efecto fotoeléctrico</strong>. Los fotones incidentes excitan los electrones en la banda de valencia de un material semiconductor (como el silicio dopado), promoviéndolos a la banda de conducción y generando pares electrón-hueco.',
+                tech: '<strong>Paneles Fotovoltaicos (PV):</strong> Compuestos por celdas con uniones P-N. Requieren inversores para transformar la corriente continua (DC) en corriente alterna (AC) sincronizada con la red. Tecnologías emergentes incluyen perovskitas y celdas en tándem para superar el límite de Shockley-Queisser.',
+                facts: [
+                    "Eficiencia comercial actual: ~18% - 22% (Silicio monocristalino).",
+                    "Requiere sistemas MPPT (Maximum Power Point Tracking) para optimizar la extracción de potencia bajo irradiancia variable.",
+                    "La energía termosolar (CSP) utiliza espejos para concentrar calor y mover turbinas de vapor clásico."
+                ]
+            },
+            {
+                id: 'wind',
+                name: 'Energía Eólica',
+                subtitle: 'Aerogeneradores y Fluidodinámica',
+                color: 'from-blue-600 to-blue-300',
+                gradientId: 'grad-wind',
+                svg: `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="svg-gradient-wind" d="M12 2C9.243 2 7 4.243 7 7c0 1.25.46 2.39 1.22 3.28L6 14l3.5 2 2.78-4.22c.23.08.47.14.72.19V22h2v-9.97c1.39-.42 2.51-1.46 3.03-2.8l2.97 1.77-1-1.73-3.66-2.12C16.8 5.6 14.65 4 12 4V2zm0 8a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>`,
+                shortDesc: 'Extracción de energía cinética del viento mediante perfiles aerodinámicos.',
+                principle: 'El viento incide sobre las palas del rotor, creando una diferencia de presión (sustentación y arrastre) basada en el principio de Bernoulli. Esta fuerza aerodinámica genera un par motor que hace girar el eje de la turbina.',
+                tech: '<strong>Aerogeneradores:</strong> Sujetas al <em>Límite de Betz</em> (máxima eficiencia teórica del 59.3%). Utilizan generadores síncronos de imanes permanentes (PMSG) o generadores de inducción doblemente alimentados (DFIG) acoplados a multiplicadoras.',
+                facts: [
+                    "<strong>Caso de Estudio: La Guajira, Colombia.</strong> Posee un potencial eólico de clase mundial debido a la presencia constante de los vientos alisios del noreste, con velocidades medias superiores a 9 m/s, superando por mucho el promedio global.",
+                    "Densidad de potencia es proporcional al cubo de la velocidad del viento (P ∝ v³).",
+                    "Desarrollo creciente en parques eólicos <em>Offshore</em> (marinos) por la menor rugosidad del terreno y vientos más laminares."
+                ]
+            },
+            {
+                id: 'nuclear',
+                name: 'Energía Nuclear',
+                subtitle: 'Fisión, Reactores y Física de Partículas',
+                color: 'from-green-600 to-green-300',
+                gradientId: 'grad-nuclear',
+                svg: `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="svg-gradient-nuclear" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><circle cx="12" cy="12" r="3" class="svg-gradient-nuclear"/><path class="svg-gradient-nuclear" d="M12 5.5c-3.59 0-6.5 2.91-6.5 6.5 0 .8.17 1.56.46 2.26l1.3-1.3C7.1 12.65 7 12.33 7 12c0-2.76 2.24-5 5-5 .33 0 .65.09.96.26l1.3-1.3A6.47 6.47 0 0 0 12 5.5zm4.04 1.7l-1.3 1.3c.69.49 1.25 1.14 1.6 1.9h1.86c-.43-1.28-1.2-2.38-2.16-3.2zm-8.08 9.6l1.3-1.3c-.69-.49-1.25-1.14-1.6-1.9H5.8c.43 1.28 1.2 2.38 2.16 3.2zm9.24-.16c-.29.7-.8 1.33-1.42 1.83l1.3 1.3c.89-.73 1.58-1.68 1.98-2.76h-1.86a4.95 4.95 0 0 1 0-.37z"/></svg>`,
+                shortDesc: 'Generación térmica de carga base mediante reacciones de fisión controladas.',
+                principle: 'Liberación masiva de energía (E=mc²) al romper núcleos pesados (como el Uranio-235) mediante el bombardeo de neutrones térmicos. La reacción en cadena controlada genera calor que vaporiza agua para mover una turbina.',
+                tech: '<strong>Reactores de Potencia:</strong> Predominan los PWR (Agua Presurizada) y BWR (Agua en Ebullición). Requieren moderadores (agua, grafito) para frenar neutrones y barras de control (cadmio, boro) para regular la reacción.',
+                facts: [
+                    "Densidad energética extrema: Un pellet de uranio (~7g) equivale a 1 tonelada de carbón.",
+                    "<strong>Hitos:</strong> Evolución hacia reactores de Generación III+ (sistemas de seguridad pasivos) y SMR (Small Modular Reactors) para mayor flexibilidad.",
+                    "<strong>El Futuro (Fusión):</strong> Proyectos como el ITER buscan dominar la fusión nuclear (confinamiento magnético de plasma), prometiendo energía limpia casi ilimitada."
+                ]
+            },
+            {
+                id: 'hydro',
+                name: 'Hidroeléctrica',
+                subtitle: 'Turbomáquinas y Alturas de Caída',
+                color: 'from-cyan-600 to-cyan-300',
+                gradientId: 'grad-hydro',
+                svg: `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="svg-gradient-hydro" d="M12 2.3l-8.6 10c-.5.6-.8 1.3-.8 2.2 0 2.6 2.1 4.7 4.7 4.7 1.7 0 3.2-.9 4-2.3.8 1.4 2.3 2.3 4 2.3 2.6 0 4.7-2.1 4.7-4.7 0-.9-.3-1.6-.8-2.2l-8.6-10H12zm0 3.8l6.3 7.3c.2.2.4.6.4.9 0 1.5-1.2 2.7-2.7 2.7-1 0-1.9-.6-2.4-1.5H10.4c-.5.9-1.4 1.5-2.4 1.5-1.5 0-2.7-1.2-2.7-2.7 0-.3.1-.7.4-.9L12 6.1zM3 21h18v2H3v-2z"/></svg>`,
+                shortDesc: 'Aprovechamiento de la energía potencial gravitatoria de masas de agua.',
+                principle: 'Conversión de la energía potencial del agua almacenada en altura (salto o carga) en energía cinética al fluir por una tubería forzada, y finalmente en energía mecánica rotacional en la turbina.',
+                tech: '<strong>Turbinas Hidráulicas:</strong> La selección depende del salto y caudal. <em>Pelton:</em> Acción, altos saltos, bajo caudal. <em>Francis:</em> Reacción, saltos medios, caudales medios (las más comunes). <em>Kaplan:</em> Reacción, bajos saltos, altos caudales (flujo axial).',
+                facts: [
+                    "Alta inercia síncrona: Proveen una excelente estabilidad y regulación de frecuencia a las redes eléctricas interconectadas.",
+                    "Las centrales de bombeo (Pumped-storage) actúan como las baterías más grandes del mundo, almacenando energía en horas valle.",
+                    "Eficiencia mecánica global del sistema muy alta (a menudo >90%)."
+                ]
+            },
+            {
+                id: 'geo',
+                name: 'Geotérmica',
+                subtitle: 'Termodinámica Endógena',
+                color: 'from-red-600 to-red-400',
+                gradientId: 'grad-geo',
+                svg: `<svg viewBox="0 0 24 24" class="w-full h-full"><path class="svg-gradient-geo" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path class="svg-gradient-geo" d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.65 0-3-1.35-3-3s1.35-3 3-3 3 1.35 3 3-1.35 3-3 3zm-2.5-1.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5-1.5-.67-1.5-1.5z"/><path class="svg-gradient-geo" d="M9 12c0-1.66 1.34-3 3-3s3 1.34 3 3"/></svg>`,
+                shortDesc: 'Explotación del calor interior de la corteza terrestre para ciclos termodinámicos.',
+                principle: 'Extracción del calor del magma o decaimiento radiactivo en el subsuelo. Los fluidos geotérmicos (agua líquida a alta presión o vapor) se extraen a la superficie. La caída de presión provoca la vaporización (flashing) que mueve la turbina.',
+                tech: '<strong>Plantas Geotérmicas:</strong> Dependiendo de la entalpía del recurso, se usan plantas de vapor seco, de vapor de destello (Flash Steam) para fluidos bifásicos, o plantas de Ciclo Binario (donde el calor se transfiere a un fluido de trabajo orgánico con menor punto de ebullición).',
+                facts: [
+                    "Factor de planta sumamente alto (>90%), funcionando como energía de carga base independiente del clima.",
+                    "Requiere reinyección de la salmuera extraída para mantener la presión del reservorio y mitigar impactos ambientales.",
+                    "Sistemas Geotérmicos Mejorados (EGS) prometen expandir esta tecnología a zonas sin acuíferos naturales fracturando roca caliente profunda."
+                ]
+            }
+        ];
+
+        const gridContainer = document.getElementById('energy-grid');
+
+        // Generar las tarjetas
+        energies.forEach((energy, index) => {
+            const delay = 0.2 + (index * 0.1);
+            const card = document.createElement('div');
+            card.className = `bg-slate-800 rounded-2xl p-6 border border-slate-700 fade-in-up card-hover cursor-pointer group flex flex-col h-full`;
+            card.style.animationDelay = `${delay}s`;
+            card.onclick = () => openModal(energy.id);
+
+            card.innerHTML = `
+                <div class="w-16 h-16 mb-6 p-3 rounded-2xl bg-slate-700/50 group-hover:scale-110 transition-transform duration-300">
+                    ${energy.svg}
+                </div>
+                <h3 class="text-2xl font-bold mb-2 text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:${energy.color} transition-all">
+                    ${energy.name}
+                </h3>
+                <h4 class="text-sm text-slate-400 mb-4 font-semibold uppercase tracking-wider">${energy.subtitle}</h4>
+                <p class="text-slate-300 mb-6 flex-grow">
+                    ${energy.shortDesc}
+                </p>
+                <div class="mt-auto">
+                    <button class="w-full py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2 group-hover:bg-slate-600">
+                        Ver Detalles Técnicos
+                        <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </button>
+                </div>
+            `;
+            gridContainer.appendChild(card);
+        });
+
+        // Lógica del Modal
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalTitle = document.getElementById('modal-title');
+        const modalSubtitle = document.getElementById('modal-subtitle');
+        const modalIcon = document.getElementById('modal-icon-container');
+        const modalPrinciple = document.getElementById('modal-principle');
+        const modalTech = document.getElementById('modal-tech');
+        const modalFacts = document.getElementById('modal-facts');
+        const modalBgGradient = document.getElementById('modal-bg-gradient');
+
+        function openModal(id) {
+            const energy = energies.find(e => e.id === id);
+            if (!energy) return;
+
+            // Poblar datos
+            modalTitle.textContent = energy.name;
+            modalSubtitle.textContent = energy.subtitle;
+            modalIcon.innerHTML = energy.svg;
+            modalPrinciple.innerHTML = energy.principle;
+            modalTech.innerHTML = energy.tech;
+            
+            // Poblar lista de hechos
+            modalFacts.innerHTML = energy.facts.map(fact => `
+                <li class="flex items-start gap-3">
+                    <svg class="w-5 h-5 text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>${fact}</span>
+                </li>
+            `).join('');
+
+            // Aplicar gradiente temático
+            modalBgGradient.className = `absolute inset-0 opacity-10 bg-gradient-to-r ${energy.color}`;
+            modalTitle.className = `text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r ${energy.color}`;
+
+            // Mostrar modal
+            modalOverlay.classList.remove('hidden-modal');
+            modalOverlay.classList.add('active-modal');
+            document.body.style.overflow = 'hidden'; // Prevenir scroll fondo
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active-modal');
+            modalOverlay.classList.add('hidden-modal');
+            document.body.style.overflow = 'auto'; // Restaurar scroll
+        }
+
+        // Cerrar modal al hacer clic afuera
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                closeModal();
+            }
+        });
+
+        // Cerrar modal con tecla Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modalOverlay.classList.contains('active-modal')) {
+                closeModal();
+            }
+        });
+
+    </script>
+</body>
+</html>
