@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoSolar - Plataforma de Simulación Energética y Fotovoltaica</title>
+    <title>EcoSolar Pro v3.0 - Plataforma de Ingeniería y Simulación Fotovoltaica</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -13,8 +13,6 @@
                 extend: {
                     colors: {
                         solar: {
-                            50: '#fffbe1',
-                            100: '#fff5b7',
                             400: '#facc15',
                             500: '#eab308',
                             600: '#ca8a04',
@@ -23,7 +21,6 @@
                             400: '#34d399',
                             500: '#10b981',
                             600: '#059669',
-                            700: '#047857',
                         }
                     }
                 }
@@ -37,41 +34,51 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
         input[type=range] { accent-color: #10b981; }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-amber { box-shadow: 0 0 25px -5px rgba(234, 179, 8, 0.15); }
+        .glow-emerald { box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.15); }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-eco-500 selection:text-slate-950">
 
     <!-- TOP NAVIGATION HEADER -->
-    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+    <header class="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
                 <div class="p-2 bg-gradient-to-tr from-solar-500 to-eco-500 rounded-xl shadow-lg shadow-eco-500/20 text-slate-950">
                     <i data-lucide="sun" class="w-6 h-6 stroke-[2.5]"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg leading-tight tracking-tight text-white flex items-center gap-2">
-                        EcoSolar <span class="text-xs font-normal px-2 py-0.5 rounded-full bg-eco-500/10 text-eco-400 border border-eco-500/20">v2.5 Pro</span>
+                    <h1 class="font-extrabold text-lg tracking-tight text-white flex items-center gap-2">
+                        EcoSolar <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gradient-to-r from-solar-500/20 to-eco-500/20 text-solar-400 border border-solar-500/30">v3.0 Ultra</span>
                     </h1>
-                    <p class="text-xs text-slate-400">Simulador de Ingeniería Fotovoltaica & Gestión Energética</p>
+                    <p class="text-[11px] text-slate-400">Simulador de Ingeniería Fotovoltaica & Gestión Energética</p>
                 </div>
             </div>
 
             <div class="flex items-center gap-3">
-                <button onclick="openReportModal()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-eco-500/20 transition-all">
-                    <i data-lucide="file-text" class="w-4 h-4"></i>
-                    <span>Generar y Enviar Informe</span>
+                <div id="statusBadge" class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="statusText">100% Autosuficiente</span>
+                </div>
+                <button onclick="openReportModal()" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-solar-500 to-eco-500 hover:from-solar-600 hover:to-eco-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-eco-500/20 transition-all transform hover:scale-[1.02]">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                    <span>Generar e Integrar Informe</span>
                 </button>
-                <button onclick="resetToDefaults()" class="text-xs text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-800 hover:bg-slate-800">
-                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-                    <span class="hidden sm:inline">Restablecer</span>
+                <button onclick="resetToDefaults()" class="text-xs text-slate-400 hover:text-white transition-colors p-2 rounded-lg border border-slate-800 hover:bg-slate-800" title="Restablecer">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                 </button>
             </div>
         </div>
@@ -80,168 +87,214 @@
     <!-- MAIN CONTENT CONTAINER -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        <!-- KPI SUMMARY CARDS -->
+        <!-- KPI CARDS (4 GRID) -->
         <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-4 shadow-xl">
+            <div class="glass-card rounded-2xl p-4 shadow-xl hover:border-slate-700 transition-all glow-amber">
                 <div class="flex items-center justify-between text-slate-400 mb-2">
-                    <span class="text-xs font-medium uppercase tracking-wider">Producción Solar</span>
-                    <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400"><i data-lucide="zap" class="w-4 h-4"></i></div>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Generación Solar</span>
+                    <div class="p-2 rounded-xl bg-amber-500/10 text-amber-400"><i data-lucide="zap" class="w-4 h-4"></i></div>
                 </div>
                 <div class="flex items-baseline gap-2">
-                    <span id="kpiProduction" class="text-2xl sm:text-3xl font-bold text-white">0.00</span>
+                    <span id="kpiProduction" class="text-3xl font-extrabold text-white tracking-tight">0.00</span>
                     <span class="text-xs font-semibold text-slate-400">kWh/día</span>
                 </div>
-                <p class="text-xs text-slate-500 mt-2 flex items-center gap-1">
-                    <i data-lucide="trending-up" class="w-3 h-3 text-amber-400"></i>
-                    <span id="kpiPeakPower">0.00 kWp pico</span>
+                <p class="text-[11px] text-slate-500 mt-2 flex items-center gap-1">
+                    <i data-lucide="sun-medium" class="w-3.5 h-3.5 text-amber-400"></i>
+                    <span id="kpiPeakPower">0.00 kWp Capacidad Instalada</span>
                 </p>
             </div>
 
-            <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-4 shadow-xl">
+            <div class="glass-card rounded-2xl p-4 shadow-xl hover:border-slate-700 transition-all">
                 <div class="flex items-center justify-between text-slate-400 mb-2">
-                    <span class="text-xs font-medium uppercase tracking-wider">Consumo Total</span>
-                    <div class="p-2 rounded-lg bg-sky-500/10 text-sky-400"><i data-lucide="home" class="w-4 h-4"></i></div>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Consumo Doméstico</span>
+                    <div class="p-2 rounded-xl bg-sky-500/10 text-sky-400"><i data-lucide="home" class="w-4 h-4"></i></div>
                 </div>
                 <div class="flex items-baseline gap-2">
-                    <span id="kpiConsumption" class="text-2xl sm:text-3xl font-bold text-white">0.00</span>
+                    <span id="kpiConsumption" class="text-3xl font-extrabold text-white tracking-tight">0.00</span>
                     <span class="text-xs font-semibold text-slate-400">kWh/día</span>
                 </div>
-                <p class="text-xs text-slate-500 mt-2 flex items-center gap-1">
-                    <i data-lucide="cpu" class="w-3 h-3 text-sky-400"></i>
+                <p class="text-[11px] text-slate-500 mt-2 flex items-center gap-1">
+                    <i data-lucide="cpu" class="w-3.5 h-3.5 text-sky-400"></i>
                     <span id="kpiActiveAppliances">0 equipos activos</span>
                 </p>
             </div>
 
-            <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-4 shadow-xl">
+            <div class="glass-card rounded-2xl p-4 shadow-xl hover:border-slate-700 transition-all glow-emerald">
                 <div class="flex items-center justify-between text-slate-400 mb-2">
-                    <span class="text-xs font-medium uppercase tracking-wider">Autosuficiencia</span>
-                    <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400"><i data-lucide="pie-chart" class="w-4 h-4"></i></div>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Autosuficiencia</span>
+                    <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400"><i data-lucide="pie-chart" class="w-4 h-4"></i></div>
                 </div>
                 <div class="flex items-baseline gap-2">
-                    <span id="kpiAutonomy" class="text-2xl sm:text-3xl font-bold text-white">0%</span>
-                    <span id="kpiBalanceBadge" class="text-xs font-semibold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300">100% Cobertura</span>
+                    <span id="kpiAutonomy" class="text-3xl font-extrabold text-white tracking-tight">0%</span>
+                    <span id="kpiBalanceBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300">Cobertura Total</span>
                 </div>
                 <div class="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
-                    <div id="kpiAutonomyBar" class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                    <div id="kpiAutonomyBar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
                 </div>
             </div>
 
-            <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-4 shadow-xl">
+            <div class="glass-card rounded-2xl p-4 shadow-xl hover:border-slate-700 transition-all">
                 <div class="flex items-center justify-between text-slate-400 mb-2">
-                    <span class="text-xs font-medium uppercase tracking-wider">Ahorro CO2</span>
-                    <div class="p-2 rounded-lg bg-teal-500/10 text-teal-400"><i data-lucide="leaf" class="w-4 h-4"></i></div>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Impacto Ecológico</span>
+                    <div class="p-2 rounded-xl bg-teal-500/10 text-teal-400"><i data-lucide="leaf" class="w-4 h-4"></i></div>
                 </div>
                 <div class="flex items-baseline gap-2">
-                    <span id="kpiCo2" class="text-2xl sm:text-3xl font-bold text-white">0.0</span>
-                    <span class="text-xs font-semibold text-slate-400">kg/mes</span>
+                    <span id="kpiCo2" class="text-3xl font-extrabold text-white tracking-tight">0.0</span>
+                    <span class="text-xs font-semibold text-slate-400">kg CO2/mes</span>
                 </div>
-                <p class="text-xs text-slate-500 mt-2 flex items-center gap-1">
-                    <i data-lucide="trees" class="w-3 h-3 text-teal-400"></i>
-                    <span id="kpiTrees">Equivale a ~0 árboles plantados</span>
+                <p class="text-[11px] text-slate-500 mt-2 flex items-center gap-1">
+                    <i data-lucide="trees" class="w-3.5 h-3.5 text-teal-400"></i>
+                    <span id="kpiTrees">Equivale a ~0 árboles/mes</span>
                 </p>
             </div>
         </section>
 
-        <!-- GRID SECTION: SIMULATION CONTROLS & APPLIANCES -->
+        <!-- MAIN WORKSPACE GRID -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- LEFT COLUMN: CONTROLS & ANIMATED SIMULATION (SPAN 7) -->
             <section class="lg:col-span-7 space-y-6">
-                <!-- CONTROLS -->
-                <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 shadow-xl">
+                <!-- PARAMETER CONTROLS CARD -->
+                <div class="glass-card rounded-2xl p-5 shadow-xl">
                     <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-                        <h2 class="font-semibold text-slate-100 flex items-center gap-2">
-                            <i data-lucide="sliders" class="w-5 h-5 text-solar-400"></i>
-                            Parámetros Fotovoltaicos
+                        <h2 class="font-bold text-slate-100 flex items-center gap-2 text-sm">
+                            <i data-lucide="sliders" class="w-4 h-4 text-solar-400"></i>
+                            Parámetros del Arreglo Fotovoltaico
                         </h2>
+                        <span class="text-[10px] text-slate-400 bg-slate-800/80 px-2.5 py-1 rounded-md border border-slate-700">Ajuste Dinámico</span>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div class="space-y-1.5">
                             <div class="flex justify-between text-xs">
-                                <label for="inputIrradiance" class="text-slate-300 font-medium">Irradiancia Solar</label>
+                                <label for="inputIrradiance" class="text-slate-300 font-medium">Irradiancia Incidente</label>
                                 <span class="text-amber-400 font-bold"><span id="valIrradiance">800</span> W/m²</span>
                             </div>
                             <input type="range" id="inputIrradiance" min="100" max="1200" step="20" value="800" class="w-full h-2 bg-slate-800 rounded-lg cursor-pointer">
+                            <p class="text-[10px] text-slate-500">Radiación solar sobre la superficie</p>
                         </div>
 
                         <div class="space-y-1.5">
                             <div class="flex justify-between text-xs">
-                                <label for="inputArea" class="text-slate-300 font-medium">Área de Paneles</label>
+                                <label for="inputArea" class="text-slate-300 font-medium">Superficie Captadora</label>
                                 <span class="text-amber-400 font-bold"><span id="valArea">20</span> m²</span>
                             </div>
                             <input type="range" id="inputArea" min="1" max="100" step="1" value="20" class="w-full h-2 bg-slate-800 rounded-lg cursor-pointer">
+                            <p class="text-[10px] text-slate-500">Área total de módulos solares</p>
                         </div>
 
                         <div class="space-y-1.5">
                             <div class="flex justify-between text-xs">
-                                <label for="inputEfficiency" class="text-slate-300 font-medium">Eficiencia Módulo</label>
+                                <label for="inputEfficiency" class="text-slate-300 font-medium">Eficiencia Tecnológica</label>
                                 <span class="text-amber-400 font-bold"><span id="valEfficiency">20</span>%</span>
                             </div>
                             <input type="range" id="inputEfficiency" min="10" max="26" step="0.5" value="20" class="w-full h-2 bg-slate-800 rounded-lg cursor-pointer">
+                            <p class="text-[10px] text-slate-500">Módulos Monocristalinos N-Type / PERC</p>
                         </div>
 
                         <div class="space-y-1.5">
                             <div class="flex justify-between text-xs">
-                                <label for="inputTemp" class="text-slate-300 font-medium">Temperatura Ambiente</label>
+                                <label for="inputTemp" class="text-slate-300 font-medium">Temperatura Operativa</label>
                                 <span class="text-amber-400 font-bold"><span id="valTemp">28</span> °C</span>
                             </div>
                             <input type="range" id="inputTemp" min="10" max="50" step="1" value="28" class="w-full h-2 bg-slate-800 rounded-lg cursor-pointer">
+                            <p class="text-[10px] text-slate-500">Pérdida térmica (-0.4%/°C > 25°C)</p>
                         </div>
 
                         <div class="sm:col-span-2 space-y-1.5">
                             <div class="flex justify-between text-xs">
-                                <label for="inputTilt" class="text-slate-300 font-medium">Ángulo Inclinación</label>
+                                <label for="inputTilt" class="text-slate-300 font-medium">Inclinación Estructural (Tilt)</label>
                                 <span class="text-amber-400 font-bold"><span id="valTilt">25</span>°</span>
                             </div>
                             <input type="range" id="inputTilt" min="0" max="60" step="1" value="25" class="w-full h-2 bg-slate-800 rounded-lg cursor-pointer">
+                            <p class="text-[10px] text-slate-500">Modifica el ángulo físico en la simulación visual</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- ANIMATED CANVAS -->
-                <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-4 shadow-xl relative overflow-hidden">
-                    <div class="w-full h-56 sm:h-64 bg-slate-950 rounded-xl overflow-hidden border border-slate-800 relative">
+                <!-- ANIMATED CANVAS SCHEMATIC -->
+                <div class="glass-card rounded-2xl p-4 shadow-xl relative overflow-hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-xs font-semibold text-slate-200 flex items-center gap-2">
+                            <i data-lucide="activity" class="w-4 h-4 text-emerald-400"></i>
+                            Simulador Interactivo de Captación y Flujo Electrónico
+                        </h3>
+                        <span class="text-[10px] text-emerald-400 font-mono flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                            Simulación en Vivo
+                        </span>
+                    </div>
+
+                    <div class="w-full h-64 bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80 relative">
                         <canvas id="solarCanvas" class="w-full h-full block"></canvas>
+                        
+                        <!-- Readout Badges -->
                         <div class="absolute bottom-3 left-3 bg-slate-900/90 backdrop-blur border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-300 pointer-events-none">
-                            <div class="text-[10px] uppercase text-slate-500 font-semibold">Generación Instantánea</div>
-                            <div class="font-bold text-amber-400 text-sm" id="canvasPowerReadout">0.00 kW</div>
+                            <div class="text-[9px] uppercase text-slate-500 font-bold">Potencia Generada Instantánea</div>
+                            <div class="font-extrabold text-amber-400 text-sm" id="canvasPowerReadout">0.00 kW</div>
+                        </div>
+
+                        <div class="absolute bottom-3 right-3 bg-slate-900/90 backdrop-blur border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-300 pointer-events-none text-right">
+                            <div class="text-[9px] uppercase text-slate-500 font-bold">Estado de Inversor Central</div>
+                            <div class="font-extrabold text-emerald-400 text-xs flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Conversión DC/AC Activa
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- HOURLY CHART -->
-                <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 shadow-xl">
-                    <h3 class="text-sm font-semibold text-slate-100 flex items-center gap-2 mb-4">
-                        <i data-lucide="sun-medium" class="w-4 h-4 text-solar-400"></i> Curva Horaria de Generación Solar
-                    </h3>
-                    <div class="h-56 w-full">
+                <!-- HOURLY GENERATION VS CONSUMPTION CHART -->
+                <div class="glass-card rounded-2xl p-5 shadow-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-xs font-bold text-slate-100 flex items-center gap-2">
+                                <i data-lucide="sun-medium" class="w-4 h-4 text-solar-400"></i>
+                                Perfil Horario: Generación Solar vs. Demanda Doméstica
+                            </h3>
+                            <p class="text-[11px] text-slate-400">Curva de campana solar de 6:00 AM a 6:00 PM superpuesta al consumo</p>
+                        </div>
+                    </div>
+                    <div class="h-60 w-full">
                         <canvas id="solarHourlyChart"></canvas>
                     </div>
                 </div>
             </section>
 
-            <!-- APPLIANCES -->
+            <!-- RIGHT COLUMN: APPLIANCES & BREAKDOWN (SPAN 5) -->
             <section class="lg:col-span-5 space-y-6">
-                <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 shadow-xl">
+                <div class="glass-card rounded-2xl p-5 shadow-xl flex flex-col h-full">
                     <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-                        <h2 class="font-semibold text-slate-100 flex items-center gap-2">
-                            <i data-lucide="plug" class="w-5 h-5 text-sky-400"></i> Cargas Domésticas
-                        </h2>
-                        <button onclick="openCustomModal()" class="px-2.5 py-1.5 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/30 text-xs font-medium flex items-center gap-1">
-                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Agregar
+                        <div>
+                            <h2 class="font-bold text-slate-100 flex items-center gap-2 text-sm">
+                                <i data-lucide="plug" class="w-4 h-4 text-sky-400"></i>
+                                Gestión de Cargas Domésticas
+                            </h2>
+                            <p class="text-[11px] text-slate-400">Activa o ajusta el uso diario de los equipos</p>
+                        </div>
+                        <button onclick="openCustomModal()" class="px-2.5 py-1.5 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                            <span>Agregar</span>
                         </button>
                     </div>
 
-                    <div class="mb-4 p-3 bg-slate-950/70 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
-                        <span class="text-slate-300">Tarifa Eléctrica por kWh:</span>
+                    <!-- Tariff Input -->
+                    <div class="mb-4 p-3 bg-slate-950/70 rounded-xl border border-slate-800 flex items-center justify-between">
+                        <span class="text-xs text-slate-300 font-medium">Tarifa Eléctrica por kWh:</span>
                         <div class="flex items-center gap-1">
-                            <span class="text-slate-500">$</span>
-                            <input type="number" id="inputTariff" value="0.18" step="0.01" min="0.01" class="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-right text-white font-bold">
+                            <span class="text-xs text-slate-500">$</span>
+                            <input type="number" id="inputTariff" value="0.18" step="0.01" min="0.01" class="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-right text-xs font-bold text-white focus:outline-none focus:border-sky-500">
                         </div>
                     </div>
 
-                    <div id="appliancesList" class="space-y-3 max-h-[380px] overflow-y-auto pr-1"></div>
+                    <!-- Scrollable List -->
+                    <div id="appliancesList" class="space-y-2.5 max-h-[380px] overflow-y-auto pr-1"></div>
 
+                    <!-- Consumption Doughnut Chart -->
                     <div class="mt-6 pt-4 border-t border-slate-800">
+                        <h4 class="text-xs font-semibold text-slate-300 mb-2 flex items-center gap-2">
+                            <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-sky-400"></i>
+                            Distribución del Consumo por Carga
+                        </h4>
                         <div class="h-44 w-full">
                             <canvas id="consumptionChart"></canvas>
                         </div>
@@ -250,55 +303,80 @@
             </section>
         </div>
 
-        <!-- ROI SECTION -->
-        <section class="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-6">
+        <!-- ROI & CASHFLOW SECTION -->
+        <section class="glass-card rounded-2xl p-6 shadow-xl space-y-6">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-4 gap-2">
                 <div>
-                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                        <i data-lucide="line-chart" class="w-5 h-5 text-emerald-400"></i> Análisis Financiero & ROI
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <i data-lucide="line-chart" class="w-5 h-5 text-emerald-400"></i>
+                        Análisis Financiero, Retorno de Inversión (ROI) y Flujo de Caja
                     </h2>
+                    <p class="text-xs text-slate-400">Proyección económica a 25 años considerando tasa de degradación y ahorro tarifario</p>
                 </div>
                 <div class="flex items-center gap-2 text-xs">
-                    <span class="text-slate-400">Costo Instalación / m²:</span>
+                    <span class="text-slate-400">Costo Llave en Mano:</span>
                     <div class="flex items-center gap-1 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-lg">
                         <span class="text-slate-500">$</span>
-                        <input type="number" id="inputSystemCostM2" value="160" min="50" step="10" class="w-16 bg-transparent text-right font-bold text-emerald-400">
+                        <input type="number" id="inputSystemCostM2" value="160" min="50" step="10" class="w-16 bg-transparent text-right font-bold text-emerald-400 focus:outline-none">
+                        <span class="text-slate-400 text-[11px]">/m²</span>
                     </div>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="p-4 bg-slate-950/60 rounded-xl border border-slate-800">
-                    <span class="text-xs text-slate-400 block mb-1">Inversión Estimada</span>
-                    <span id="roiTotalCost" class="text-xl font-bold text-white">$0.00</span>
+                <div class="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                    <span class="text-xs text-slate-400 block mb-1">Inversión Inicial Estimada</span>
+                    <span id="roiTotalCost" class="text-2xl font-bold text-white">$0.00</span>
+                    <p class="text-[10px] text-slate-500 mt-1">Módulos + Inversor + Estructura</p>
                 </div>
-                <div class="p-4 bg-slate-950/60 rounded-xl border border-slate-800">
-                    <span class="text-xs text-slate-400 block mb-1">Ahorro Mensual</span>
-                    <span id="roiMonthlySavings" class="text-xl font-bold text-emerald-400">$0.00</span>
+
+                <div class="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                    <span class="text-xs text-slate-400 block mb-1">Ahorro Mensual Estimado</span>
+                    <span id="roiMonthlySavings" class="text-2xl font-bold text-emerald-400">$0.00</span>
+                    <p class="text-[10px] text-slate-500 mt-1">En factura de electricidad</p>
                 </div>
-                <div class="p-4 bg-slate-950/60 rounded-xl border border-slate-800">
+
+                <div class="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80">
                     <span class="text-xs text-slate-400 block mb-1">Amortización (ROI)</span>
-                    <span id="roiPaybackYears" class="text-xl font-bold text-amber-400">0.0 Años</span>
+                    <span id="roiPaybackYears" class="text-2xl font-bold text-amber-400">0.0 Años</span>
+                    <p class="text-[10px] text-slate-500 mt-1">Retorno total de capital</p>
                 </div>
-                <div class="p-4 bg-slate-950/60 rounded-xl border border-slate-800">
-                    <span class="text-xs text-slate-400 block mb-1">Beneficio a 25 Años</span>
-                    <span id="roi25YearProfit" class="text-xl font-bold text-sky-400">$0.00</span>
+
+                <div class="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80">
+                    <span class="text-xs text-slate-400 block mb-1">Ganancia Neta (25 Años)</span>
+                    <span id="roi25YearProfit" class="text-2xl font-bold text-sky-400">$0.00</span>
+                    <p class="text-[10px] text-slate-500 mt-1">Beneficio libre acumulado</p>
                 </div>
             </div>
 
-            <div class="h-48 w-full">
-                <canvas id="balanceComparisonChart"></canvas>
+            <div>
+                <h4 class="text-xs font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-400"></i>
+                    Proyección de Flujo de Caja Acumulado (Retorno de Inversión)
+                </h4>
+                <div class="h-56 w-full">
+                    <canvas id="cashflowChart"></canvas>
+                </div>
             </div>
         </section>
 
     </main>
 
-    <!-- REPORT MODAL -->
-    <div id="reportModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-4">
+    <!-- FOOTER -->
+    <footer class="border-t border-slate-800/80 bg-slate-950 py-6 text-center text-xs text-slate-500 mt-8">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p>© 2026 EcoSolar Engineering Suite. Todos los derechos reservados.</p>
+            <p class="text-slate-600">Simulación Fotovoltaica & Integración de Datos</p>
+        </div>
+    </footer>
+
+    <!-- REPORT INTEGRATION MODAL -->
+    <div id="reportModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="glass-card border border-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-base font-semibold text-white flex items-center gap-2">
-                    <i data-lucide="send" class="w-5 h-5 text-emerald-400"></i> Generar e Integrar Informe
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i data-lucide="send" class="w-5 h-5 text-emerald-400"></i>
+                    Generar e Integrar Informe Técnico
                 </h3>
                 <button onclick="closeReportModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
@@ -306,31 +384,31 @@
             <form id="reportForm" onsubmit="sendReportToAppScript(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs text-slate-300 font-medium mb-1">Nombre del Cliente / Proyecto *</label>
-                    <input type="text" id="reportClientName" required placeholder="Ej. Residencia 1" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
+                    <input type="text" id="reportClientName" required placeholder="Ej. Residencia 1" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none">
                 </div>
 
                 <div>
                     <label class="block text-xs text-slate-300 font-medium mb-1">Correo Electrónico de Destino *</label>
-                    <input type="email" id="reportEmail" required placeholder="cliente@correo.com" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
+                    <input type="email" id="reportEmail" required placeholder="cliente@correo.com" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs text-slate-300 font-medium mb-1">Ubicación / Ciudad</label>
-                        <input type="text" id="reportLocation" placeholder="Ej. Riohacha, La Guajira" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
+                        <input type="text" id="reportLocation" placeholder="Ej. Riohacha, La Guajira" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-300 font-medium mb-1">Notas / Observaciones</label>
-                        <input type="text" id="reportNotes" placeholder="Comentarios..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
+                        <label class="block text-xs text-slate-300 font-medium mb-1">Observaciones</label>
+                        <input type="text" id="reportNotes" placeholder="Notas adicionales..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none">
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-xs text-slate-300 font-medium mb-1">URL de Google Apps Script Web App</label>
-                    <input type="url" id="scriptUrlInput" required placeholder="https://script.google.com/macros/s/..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-amber-400 font-mono text-[11px]">
+                    <input type="url" id="scriptUrlInput" required placeholder="https://script.google.com/macros/s/..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-amber-400 font-mono text-[11px] focus:border-emerald-500 focus:outline-none">
                 </div>
 
-                <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
                     <button type="button" onclick="closeReportModal()" class="px-4 py-2 rounded-lg text-xs border border-slate-800 text-slate-300 hover:bg-slate-800">Cancelar</button>
                     <button type="submit" id="submitReportBtn" class="px-5 py-2 rounded-lg text-xs bg-gradient-to-r from-solar-500 to-eco-500 text-slate-950 font-bold hover:opacity-90">Enviar e Integrar</button>
                 </div>
@@ -339,15 +417,15 @@
     </div>
 
     <!-- CUSTOM APPLIANCE MODAL -->
-    <div id="customModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
+    <div id="customModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="glass-card border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-base font-semibold text-white">Agregar Electrodoméstico</h3>
+                <h3 class="text-base font-bold text-white">Agregar Nuevo Electrodoméstico</h3>
                 <button onclick="closeCustomModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <form onsubmit="handleAddAppliance(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs text-slate-300 font-medium mb-1">Nombre</label>
+                    <label class="block text-xs text-slate-300 font-medium mb-1">Nombre del Dispositivo</label>
                     <input type="text" id="newAppName" required placeholder="Ej. Bomba de Agua" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
@@ -356,7 +434,7 @@
                         <input type="number" id="newAppPower" required min="1" placeholder="1000" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-300 font-medium mb-1">Horas Uso / Día</label>
+                        <label class="block text-xs text-slate-300 font-medium mb-1">Uso Diario (Horas)</label>
                         <input type="number" id="newAppHours" required min="0.1" max="24" step="0.5" placeholder="4" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
                     </div>
                 </div>
@@ -379,20 +457,20 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT APP LOGIC -->
+    <!-- JAVASCRIPT APPLICATION LOGIC -->
     <script>
         const defaultAppliances = [
             { id: '1', name: 'Aire Acondicionado Inverter', power: 1200, hours: 6, active: true, category: 'Climatización' },
             { id: '2', name: 'Refrigerador No-Frost', power: 180, hours: 24, active: true, category: 'Refrigeración' },
             { id: '3', name: 'Iluminación LED (10 Bombillos)', power: 100, hours: 5, active: true, category: 'Iluminación' },
-            { id: '4', name: 'Workstation / Computador', power: 250, hours: 8, active: true, category: 'Entretenimiento' },
+            { id: '4', name: 'Workstation / Laptop', power: 250, hours: 8, active: true, category: 'Entretenimiento' },
             { id: '5', name: 'Smart TV 55"', power: 120, hours: 5, active: true, category: 'Entretenimiento' }
         ];
 
         let appliances = JSON.parse(JSON.stringify(defaultAppliances));
         let hourlyChart = null;
         let consumptionChart = null;
-        let comparisonChart = null;
+        let cashflowChart = null;
 
         function calculateSolarMetrics() {
             const G = parseFloat(document.getElementById('inputIrradiance').value);
@@ -458,15 +536,15 @@
 
             document.getElementById('valIrradiance').textContent = solar.G;
             document.getElementById('valArea').textContent = solar.area;
-            document.getElementById('valEfficiency').textContent = solar.eff * 100;
+            document.getElementById('valEfficiency').textContent = (solar.eff * 100).toFixed(1);
             document.getElementById('valTemp').textContent = solar.temp;
             document.getElementById('valTilt').textContent = solar.tilt;
 
             document.getElementById('kpiProduction').textContent = solar.dailyTotalKWh.toFixed(2);
-            document.getElementById('kpiPeakPower').textContent = `${solar.peakPowerKW} kWp pico`;
+            document.getElementById('kpiPeakPower').textContent = `${solar.peakPowerKW} kWp Capacidad Instalada`;
 
             document.getElementById('kpiConsumption').textContent = cons.totalDailyKWh.toFixed(2);
-            document.getElementById('kpiActiveAppliances').textContent = `${cons.activeCount} activos`;
+            document.getElementById('kpiActiveAppliances').textContent = `${cons.activeCount} de ${appliances.length} equipos activos`;
 
             const autonomy = cons.totalDailyKWh > 0 
                 ? Math.min(100, Math.round((solar.dailyTotalKWh / cons.totalDailyKWh) * 100))
@@ -474,6 +552,22 @@
 
             document.getElementById('kpiAutonomy').textContent = `${autonomy}%`;
             document.getElementById('kpiAutonomyBar').style.width = `${autonomy}%`;
+
+            const statusBadge = document.getElementById('statusBadge');
+            const statusText = document.getElementById('statusText');
+            const balanceBadge = document.getElementById('kpiBalanceBadge');
+
+            if (solar.dailyTotalKWh >= cons.totalDailyKWh) {
+                statusBadge.className = "hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
+                statusText.textContent = "100% Autosuficiente";
+                balanceBadge.textContent = "Cobertura Total";
+                balanceBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300";
+            } else {
+                statusBadge.className = "hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30";
+                statusText.textContent = "Red de Apoyo Requerida";
+                balanceBadge.textContent = `${autonomy}% Cobertura`;
+                balanceBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300";
+            }
 
             const monthlyGen = solar.dailyTotalKWh * 30;
             const co2Saved = (monthlyGen * 0.42).toFixed(1);
@@ -496,41 +590,55 @@
             document.getElementById('roiPaybackYears').textContent = paybackYears > 0 ? `${paybackYears.toFixed(1)} Años` : 'N/A';
             document.getElementById('roi25YearProfit').textContent = `$${Math.max(0, profit25Years).toLocaleString('en-US', {maximumFractionDigits:0})}`;
 
-            renderHourlyChart(solar.hoursLabels, solar.hourlyData);
+            renderHourlyChart(solar.hoursLabels, solar.hourlyData, cons.totalDailyKWh);
             renderConsumptionChart(cons.categoryTotals);
-            renderComparisonChart(solar.dailyTotalKWh, cons.totalDailyKWh);
+            renderCashflowChart(totalSystemCost, annualSavings);
         }
 
-        function renderHourlyChart(labels, data) {
+        function renderHourlyChart(labels, solarData, totalConsKWh) {
+            const consData = labels.map(() => (totalConsKWh / 12).toFixed(2));
+
             if (!hourlyChart) {
                 const ctx = document.getElementById('solarHourlyChart').getContext('2d');
                 hourlyChart = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: labels,
-                        datasets: [{
-                            label: 'Potencia (kW)',
-                            data: data,
-                            borderColor: '#facc15',
-                            backgroundColor: 'rgba(250, 204, 21, 0.15)',
-                            borderWidth: 3,
-                            fill: true,
-                            tension: 0.4
-                        }]
+                        datasets: [
+                            {
+                                label: 'Generación Solar (kW)',
+                                data: solarData,
+                                borderColor: '#facc15',
+                                backgroundColor: 'rgba(250, 204, 21, 0.2)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Perfil de Demanda (kW)',
+                                data: consData,
+                                borderColor: '#38bdf8',
+                                borderWidth: 2,
+                                borderDash: [5, 5],
+                                fill: false,
+                                tension: 0.2
+                            }
+                        ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
+                        plugins: { legend: { labels: { color: '#94a3b8', font: { size: 11 } } } },
                         scales: {
-                            x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
-                            y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' }, beginAtZero: true }
+                            x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } },
+                            y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' }, beginAtZero: true }
                         }
                     }
                 });
             } else {
                 hourlyChart.data.labels = labels;
-                hourlyChart.data.datasets[0].data = data;
+                hourlyChart.data.datasets[0].data = solarData;
+                hourlyChart.data.datasets[1].data = consData;
                 hourlyChart.update();
             }
         }
@@ -538,7 +646,7 @@
         function renderConsumptionChart(categoryTotals) {
             const labels = Object.keys(categoryTotals);
             const data = Object.values(categoryTotals);
-            const colors = ['#38bdf8', '#34d399', '#facc15', '#a78bfa', '#f472b6'];
+            const colors = ['#38bdf8', '#34d399', '#facc15', '#a78bfa', '#f472b6', '#fb923c'];
 
             if (!consumptionChart) {
                 const ctx = document.getElementById('consumptionChart').getContext('2d');
@@ -555,7 +663,7 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 } } } },
+                        plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10 } } } },
                         cutout: '70%'
                     }
                 });
@@ -566,33 +674,38 @@
             }
         }
 
-        function renderComparisonChart(solarKWh, consKWh) {
-            if (!comparisonChart) {
-                const ctx = document.getElementById('balanceComparisonChart').getContext('2d');
-                comparisonChart = new Chart(ctx, {
+        function renderCashflowChart(initialInvestment, annualSavings) {
+            const years = Array.from({length: 16}, (_, i) => `Año ${i}`);
+            const cashflow = years.map((_, i) => Math.round((annualSavings * i) - initialInvestment));
+            const backgroundColors = cashflow.map(v => v >= 0 ? 'rgba(16, 185, 129, 0.8)' : 'rgba(239, 68, 68, 0.7)');
+
+            if (!cashflowChart) {
+                const ctx = document.getElementById('cashflowChart').getContext('2d');
+                cashflowChart = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: ['Balance Diario (kWh)'],
-                        datasets: [
-                            { label: 'Generación Solar', data: [solarKWh], backgroundColor: '#10b981', borderRadius: 6 },
-                            { label: 'Consumo Doméstico', data: [consKWh], backgroundColor: '#38bdf8', borderRadius: 6 }
-                        ]
+                        labels: years,
+                        datasets: [{
+                            label: 'Flujo de Caja Acumulado ($)',
+                            data: cashflow,
+                            backgroundColor: backgroundColors,
+                            borderRadius: 4
+                        }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        indexAxis: 'y',
-                        plugins: { legend: { labels: { color: '#94a3b8' } } },
+                        plugins: { legend: { display: false } },
                         scales: {
-                            x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' }, beginAtZero: true },
-                            y: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                            x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+                            y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } }
                         }
                     }
                 });
             } else {
-                comparisonChart.data.datasets[0].data = [solarKWh];
-                comparisonChart.data.datasets[1].data = [consKWh];
-                comparisonChart.update();
+                cashflowChart.data.datasets[0].data = cashflow;
+                cashflowChart.data.datasets[0].backgroundColor = backgroundColors;
+                cashflowChart.update();
             }
         }
 
@@ -602,11 +715,11 @@
 
             appliances.forEach((app, idx) => {
                 const item = document.createElement('div');
-                item.className = `p-3 rounded-xl border ${app.active ? 'bg-slate-900 border-slate-700/80' : 'bg-slate-950/40 border-slate-800/50 opacity-60'}`;
+                item.className = `p-3 rounded-xl border transition-all ${app.active ? 'bg-slate-900/90 border-slate-700/80' : 'bg-slate-950/40 border-slate-800/40 opacity-50'}`;
                 item.innerHTML = `
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="flex items-center gap-2">
-                            <input type="checkbox" ${app.active ? 'checked' : ''} onchange="toggleAppliance(${idx})" class="w-4 h-4 rounded text-eco-500 bg-slate-950 border-slate-700">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <div class="flex items-center gap-2.5">
+                            <input type="checkbox" ${app.active ? 'checked' : ''} onchange="toggleAppliance(${idx})" class="w-4 h-4 rounded text-eco-500 bg-slate-950 border-slate-700 focus:ring-0 cursor-pointer">
                             <div>
                                 <h4 class="text-xs font-semibold text-white leading-none">${app.name}</h4>
                                 <span class="text-[10px] text-slate-400">${app.category}</span>
@@ -627,6 +740,7 @@
 
         function openCustomModal() { document.getElementById('customModal').classList.remove('hidden'); }
         function closeCustomModal() { document.getElementById('customModal').classList.add('hidden'); }
+        
         function openReportModal() { 
             const savedUrl = localStorage.getItem('ecoSolarScriptUrl') || '';
             if (savedUrl) document.getElementById('scriptUrlInput').value = savedUrl;
@@ -653,7 +767,7 @@
             event.preventDefault();
             const endpoint = document.getElementById('scriptUrlInput').value.trim();
             if (!endpoint) {
-                alert('Ingresa la URL de Google Apps Script');
+                alert('Por favor ingresa la URL de tu Google Apps Script');
                 return;
             }
             localStorage.setItem('ecoSolarScriptUrl', endpoint);
@@ -705,7 +819,7 @@
                     body: JSON.stringify(payload)
                 });
 
-                alert('¡Informe enviado con éxito a la hoja de cálculo y al correo!');
+                alert('¡Informe enviado e integrado exitosamente!');
                 closeReportModal();
             } catch (err) {
                 alert('Error al enviar el informe: ' + err.message);
@@ -728,19 +842,20 @@
             updateUI();
         }
 
-        // CANVAS ANIMATION
+        // DYNAMIC CANVAS SIMULATION
         let canvas, ctx, particles = [];
         function initCanvas() {
             canvas = document.getElementById('solarCanvas');
             ctx = canvas.getContext('2d');
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
-            for (let i = 0; i < 25; i++) {
+
+            for (let i = 0; i < 30; i++) {
                 particles.push({
                     x: Math.random() * canvas.width,
                     y: Math.random() * (canvas.height / 2),
                     speed: 1 + Math.random() * 2,
-                    length: 10 + Math.random() * 15
+                    length: 12 + Math.random() * 15
                 });
             }
             requestAnimationFrame(drawCanvas);
@@ -756,25 +871,88 @@
             if (!ctx) return;
             const w = canvas.width;
             const h = canvas.height;
+
             const G = parseFloat(document.getElementById('inputIrradiance').value);
+            const tilt = parseFloat(document.getElementById('inputTilt').value);
 
             ctx.fillStyle = '#020617';
             ctx.fillRect(0, 0, w, h);
 
-            // Sun
+            // Sun Representation
+            const sunX = w * 0.18;
+            const sunY = h * 0.25;
             ctx.fillStyle = '#facc15';
             ctx.beginPath();
-            ctx.arc(w * 0.2, h * 0.3, 16, 0, Math.PI * 2);
+            ctx.arc(sunX, sunY, 16, 0, Math.PI * 2);
             ctx.fill();
 
-            // Solar Panel
-            ctx.fillStyle = '#1e293b';
+            // Sun Rays Animation
+            ctx.strokeStyle = `rgba(250, 204, 21, ${Math.min(0.8, G / 1200)})`;
+            ctx.lineWidth = 1.5;
+
+            const panelX = w * 0.5;
+            const panelY = h * 0.55;
+
+            particles.forEach(p => {
+                p.y += p.speed * (G / 600);
+                p.x += p.speed * 0.8;
+
+                if (p.y > panelY || p.x > w) {
+                    p.x = sunX + (Math.random() * 30 - 15);
+                    p.y = sunY + (Math.random() * 20 - 10);
+                }
+
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p.x + p.length * 0.5, p.y + p.length);
+                ctx.stroke();
+            });
+
+            // Rotating Solar Panel
+            ctx.save();
+            ctx.translate(panelX, panelY);
+            ctx.rotate((-tilt * Math.PI) / 180 * 0.5);
+
+            ctx.fillStyle = '#0f172a';
             ctx.strokeStyle = '#38bdf8';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.roundRect(w * 0.45, h * 0.5, 120, 30, 4);
+            ctx.roundRect(-70, -18, 140, 36, 4);
             ctx.fill();
             ctx.stroke();
+
+            // Panel Grid lines
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+            ctx.lineWidth = 1;
+            for (let i = 1; i < 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(-70 + (140 / 5) * i, -18);
+                ctx.lineTo(-70 + (140 / 5) * i, 18);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // Inverter
+            const invX = w * 0.72;
+            const invY = h * 0.7;
+            ctx.fillStyle = '#1e293b';
+            ctx.strokeStyle = '#64748b';
+            ctx.beginPath();
+            ctx.roundRect(invX - 15, invY - 20, 30, 40, 4);
+            ctx.fill();
+            ctx.stroke();
+
+            // House Silhouette
+            const houseX = w * 0.88;
+            ctx.fillStyle = '#334155';
+            ctx.beginPath();
+            ctx.moveTo(houseX, invY - 25);
+            ctx.lineTo(houseX + 22, invY - 8);
+            ctx.lineTo(houseX + 22, invY + 20);
+            ctx.lineTo(houseX - 22, invY + 20);
+            ctx.lineTo(houseX - 22, invY - 8);
+            ctx.closePath();
+            ctx.fill();
 
             requestAnimationFrame(drawCanvas);
         }
