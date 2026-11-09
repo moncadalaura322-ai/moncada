@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GridShift DR v4.0 — Simulador de Tarifas Horarias y Respuesta de la Demanda</title>
+<script src="[cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: { extend: {
+    colors: {
+      grid:  { 400:'#38bdf8', 500:'#0ea5e9', 600:'#0284c7' },
+      peak:  { 400:'#fb7185', 500:'#f43f5e', 600:'#e11d48' },
+      valley:{ 400:'#34d399', 500:'#10b981', 600:'#059669' },
+      shift: { 400:'#c084fc', 500:'#a855f7', 600:'#9333ea' }
+    },
+    fontFamily: { sans: ['Plus Jakarta Sans','system-ui','sans-serif'] }
+  }}
+}
+</script>
+<script src="[cdn.jsdelivr.net](https://cdn.jsdelivr.net/npm/chart.js)"></script>
+<script src="[unpkg.com](https://unpkg.com/lucide@latest)"></script>
+<link rel="preconnect" href="[fonts.googleapis.com](https://fonts.googleapis.com)">
+<link rel="preconnect" href="[fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
+<link href="[fonts.googleapis.com](https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap)" rel="stylesheet">
+<style>
+  body{font-family:'Plus Jakarta Sans',sans-serif}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:#020617}
+  ::-webkit-scrollbar-thumb{background:#1e293b;border-radius:4px}
+  ::-webkit-scrollbar-thumb:hover{background:#334155}
+  input[type=range]{accent-color:#10b981;cursor:pointer}
+  .glass{background:rgba(15,23,42,.72);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.07)}
+  .glow-sky{box-shadow:0 0 30px -8px rgba(56,189,248,.22)}
+  .glow-rose{box-shadow:0 0 30px -8px rgba(244,63,94,.20)}
+  .glow-emerald{box-shadow:0 0 30px -8px rgba(16,185,129,.22)}
+  .glow-purple{box-shadow:0 0 30px -8px rgba(168,85,247,.22)}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  .fade-up{animation:fadeUp .55s cubic-bezier(.22,1,.36,1) both}
+  @keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+  .shimmer{background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.07) 50%,rgba(255,255,255,0) 100%);background-size:600px 100%;animation:shimmer 3.2s infinite}
+  @keyframes pulseRing{0%{transform:scale(.9);opacity:.7}70%{transform:scale(1.6);opacity:0}100%{opacity:0}}
+  .pulse-ring::after{content:'';position:absolute;inset:0;border-radius:9999px;border:2px solid currentColor;animation:pulseRing 2s infinite}
+  .tile-hover{transition:transform .28s cubic-bezier(.22,1,.36,1),border-color .28s,box-shadow .28s}
+  .tile-hover:hover{transform:translateY(-3px)}
+  .bar-slot{cursor:pointer;transition:background .2s,transform .15s}
+  .bar-slot:hover{transform:scaleY(1.03)}
+  .load-chip{transition:transform .2s,box-shadow .2s,border-color .2s}
+  .load-chip:hover{transform:translateX(3px)}
+  .dragging{opacity:.4;transform:scale(.97)}
+  .drop-ok{border-color:#34d399 !important;background:rgba(16,185,129,.10) !important}
+  .drop-bad{border-color:#fb7185 !important;background:rgba(244,63,94,.10) !important}
+  .toast-in{animation:fadeUp .3s ease both}
+</style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-shift-500 selection:text-slate-950">
+
+<!-- =================== HEADER =================== -->
+<header class="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur-xl sticky top-0 z-40">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+    <div class="flex items-center space-x-3">
+      <div class="p-2 bg-gradient-to-tr from-grid-500 via-shift-500 to-valley-500 rounded-xl shadow-lg shadow-shift-500/25 text-slate-950">
+        <i data-lucide="network" class="w-6 h-6 stroke-[2.5]"></i>
+      </div>
+      <div>
+        <h1 class="font-extrabold text-lg tracking-tight text-white flex items-center gap-2">
+          GridShift <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gradient-to-r from-grid-500/20 to-shift-500/20 text-grid-400 border border-grid-500/30">DR v4.0</span>
+        </h1>
+        <p class="text-[11px] text-slate-400">Smart Grid · Tarifas Horarias · Desplazamiento de Cargas</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 sm:gap-3">
+      <div id="statusBadge" class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+        <span class="relative w-2 h-2 rounded-full bg-emerald-400 pulse-ring"></span>
+        <span id="statusText">Pico bajo control</span>
+      </div>
+      <button onclick="openReportModal()" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-grid-500 to-shift-500 hover:from-grid-600 hover:to-shift-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-shift-500/25 transition-transform hover:scale-[1.03]">
+        <i data-lucide="send" class="w-4 h-4"></i>
+        <span class="hidden sm:inline">Generar e Integrar Informe</span>
+        <span class="sm:hidden">Informe</span>
+      </button>
+      <button onclick="resetToDefaults()" class="text-xs text-slate-400 hover:text-white transition-colors p-2 rounded-lg border border-slate-800 hover:bg-slate-800" title="Restablecer">
+        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+  <!-- =================== KPI CARDS =================== -->
+  <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="glass rounded-2xl p-4 shadow-xl tile-hover glow-sky fade-up">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">Energía Total Diaria</span>
+        <div class="p-2 rounded-xl bg-sky-500/10 text-sky-400"><i data-lucide="battery-charging" class="w-4 h-4"></i></div>
+      </div>
+      <div class="flex items-baseline gap-2">
+        <span id="kpiTotalEnergy" class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">0.0</span>
+        <span class="text-xs font-semibold text-slate-400">kWh</span>
+      </div>
+      <p class="text-[11px] text-slate-500 mt-2 flex items-center gap-1">
+        <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+        <span id="kpiConservation">Balance energético conservado</span>
+      </p>
+    </div>
+
+    <div class="glass rounded-2xl p-4 shadow-xl tile-hover glow-rose fade-up" style="animation-delay:.06s">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">Pico Máximo</span>
+        <div class="p-2 rounded-xl bg-rose-500/10 text-rose-400"><i data-lucide="trending-up" class="w-4 h-4"></i></div>
+      </div>
+      <div class="flex items-baseline gap-2">
+        <span id="kpiPeak" class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">0.00</span>
+        <span class="text-xs font-semibold text-slate-400">kW</span>
+      </div>
+      <p class="text-[11px] text-slate-500 mt-2 flex items-center gap-1">
+        <i data-lucide="arrow-down-right" class="w-3.5 h-3.5 text-emerald-400"></i>
+        <span id="kpiPeakReduction">Sin desplazamiento aplicado</span>
+      </p>
+    </div>
+
+    <div class="glass rounded-2xl p-4 shadow-xl tile-hover glow-emerald fade-up" style="animation-delay:.12s">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">Costo Diario</span>
+        <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400"><i data-lucide="wallet" class="w-4 h-4"></i></div>
+      </div>
+      <div class="flex items-baseline gap-2">
+        <span id="kpiDailyCost" class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">$0.00</span>
+        <span id="kpiCostBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300">Base</span>
+      </div>
+      <p class="text-[11px] text-slate-500 mt-2 flex items-center gap-1">
+        <i data-lucide="piggy-bank" class="w-3.5 h-3.5 text-emerald-400"></i>
+        <span id="kpiSavings">Ahorro: $0.00/día</span>
+      </p>
+    </div>
+
+    <div class="glass rounded-2xl p-4 shadow-xl tile-hover glow-purple fade-up" style="animation-delay:.18s">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">Cargas Desplazadas</span>
+        <div class="p-2 rounded-xl bg-purple-500/10 text-purple-400"><i data-lucide="move-horizontal" class="w-4 h-4"></i></div>
+      </div>
+      <div class="flex items-baseline gap-2">
+        <span id="kpiShifted" class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">0</span>
+        <span class="text-xs font-semibold text-slate-400">/ <span id="kpiShiftableTotal">0</span></span>
+      </div>
+      <div class="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+        <div id="kpiShiftBar" class="bg-gradient-to-r from-purple-500 to-fuchsia-400 h-full rounded-full transition-all duration-500" style="width:0%"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== MAIN GRID =================== -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- LEFT: CURVA DE CARGA + SIMULADOR -->
+    <section class="lg:col-span-8 space-y-6">
+
+      <!-- CURVA DEMANDA -->
+      <div class="glass rounded-2xl p-5 shadow-xl fade-up">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-800 pb-3">
+          <div>
+            <h2 class="font-bold text-slate-100 flex items-center gap-2 text-sm">
+              <i data-lucide="area-chart" class="w-4 h-4 text-grid-400"></i>
+              Curva de Demanda Horaria — Antes vs. Después
+            </h2>
+            <p class="text-[11px] text-slate-400">Arrastra un bloque de carga desde la columna derecha a un horario permitido, o usa el botón <span class="text-shift-400 font-semibold">Desplazar</span>.</p>
+          </div>
+          <div class="flex items-center gap-3 text-[11px]">
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-rose-500/70"></span>Antes</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-emerald-500/70"></span>Después</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-amber-400/80"></span>Ventana permitida</span>
+          </div>
+        </div>
+
+        <div class="h-72 w-full">
+          <canvas id="demandChart"></canvas>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+          <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+            <div class="text-[10px] text-slate-500 uppercase font-bold">Pico Antes</div>
+            <div id="statPeakBefore" class="text-lg font-bold text-rose-400">0.00 kW</div>
+          </div>
+          <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+            <div class="text-[10px] text-slate-500 uppercase font-bold">Pico Después</div>
+            <div id="statPeakAfter" class="text-lg font-bold text-emerald-400">0.00 kW</div>
+          </div>
+          <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+            <div class="text-[10px] text-slate-500 uppercase font-bold">Reducción de Pico</div>
+            <div id="statPeakDelta" class="text-lg font-bold text-sky-400">0.0%</div>
+          </div>
+          <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80">
+            <div class="text-[10px] text-slate-500 uppercase font-bold">Factor de Carga</div>
+            <div id="statLoadFactor" class="text-lg font-bold text-purple-400">0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIMULADOR ANIMADO (CANVAS) -->
+      <div class="glass rounded-2xl p-4 shadow-xl relative overflow-hidden fade-up">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-xs font-semibold text-slate-200 flex items-center gap-2">
+            <i data-lucide="activity" class="w-4 h-4 text-grid-400"></i>
+            Simulador de Flujo de Potencia en Red Inteligente
+          </h3>
+          <span class="text-[10px] text-emerald-400 font-mono flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            Smart Meter en Vivo
+          </span>
+        </div>
+
+        <div class="w-full h-64 bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80 relative">
+          <canvas id="gridCanvas" class="w-full h-full block"></canvas>
+          <div class="absolute bottom-3 left-3 bg-slate-900/90 backdrop-blur border border-slate-800 rounded-xl px-3 py-1.5 pointer-events-none">
+            <div class="text-[9px] uppercase text-slate-500 font-bold">Demanda Instantánea</div>
+            <div class="font-extrabold text-grid-400 text-sm" id="canvasDemandReadout">0.00 kW</div>
+          </div>
+          <div class="absolute bottom-3 right-3 bg-slate-900/90 backdrop-blur border border-slate-800 rounded-xl px-3 py-1.5 pointer-events-none text-right">
+            <div class="text-[9px] uppercase text-slate-500 font-bold">Estado del Desplazamiento</div>
+            <div class="font-extrabold text-xs flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-shift-400 animate-pulse"></span>
+              <span id="canvasShiftReadout" class="text-shift-400">Ninguna carga desplazada</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TARIFAS -->
+      <div class="glass rounded-2xl p-5 shadow-xl fade-up">
+        <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+          <h3 class="text-xs font-bold text-slate-100 flex items-center gap-2">
+            <i data-lucide="clock" class="w-4 h-4 text-grid-400"></i>
+            Estructura Tarifaria por Franjas Horarias
+          </h3>
+          <span class="text-[10px] text-slate-400 bg-slate-800/80 px-2.5 py-1 rounded-md border border-slate-700">Precios por kWh</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/25 tile-hover">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[11px] font-bold text-emerald-400">VALLE</span>
+              <span class="text-[10px] text-slate-500">00:00 – 07:00</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="text-slate-500 text-xs">$</span>
+              <input type="number" id="tariffValley" value="0.08" step="0.01" min="0.01" class="w-16 bg-transparent text-lg font-bold text-emerald-400 focus:outline-none">
+              <span class="text-[10px] text-slate-500">/kWh</span>
+            </div>
+          </div>
+          <div class="p-3 rounded-xl bg-amber-500/5 border border-amber-500/25 tile-hover">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[11px] font-bold text-amber-400">MEDIA</span>
+              <span class="text-[10px] text-slate-500">07:00 – 18:00</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="text-slate-500 text-xs">$</span>
+              <input type="number" id="tariffMid" value="0.16" step="0.01" min="0.01" class="w-16 bg-transparent text-lg font-bold text-amber-400 focus:outline-none">
+              <span class="text-[10px] text-slate-500">/kWh</span>
+            </div>
+          </div>
+          <div class="p-3 rounded-xl bg-rose-500/5 border border-rose-500/25 tile-hover">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[11px] font-bold text-rose-400">PUNTA</span>
+              <span class="text-[10px] text-slate-500">18:00 – 23:00</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="text-slate-500 text-xs">$</span>
+              <input type="number" id="tariffPeak" value="0.32" step="0.01" min="0.01" class="w-16 bg-transparent text-lg font-bold text-rose-400 focus:outline-none">
+              <span class="text-[10px] text-slate-500">/kWh</span>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 h-32 w-full">
+          <canvas id="tariffChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: CARGAS -->
+    <section class="lg:col-span-4 space-y-6">
+      <div class="glass rounded-2xl p-5 shadow-xl flex flex-col h-full fade-up">
+        <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+          <div>
+            <h2 class="font-bold text-slate-100 flex items-center gap-2 text-sm">
+              <i data-lucide="plug-zap" class="w-4 h-4 text-shift-400"></i>
+              Cargas Domésticas
+            </h2>
+            <p class="text-[11px] text-slate-400">Arrastra o usa <span class="text-shift-400 font-semibold">Desplazar</span></p>
+          </div>
+          <button onclick="openCustomModal()" class="px-2.5 py-1.5 rounded-lg bg-shift-500/10 hover:bg-shift-500/20 text-shift-400 border border-shift-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>Agregar
+          </button>
+        </div>
+
+        <div class="mb-3 p-3 bg-slate-950/70 rounded-xl border border-slate-800 flex items-center justify-between">
+          <span class="text-xs text-slate-300 font-medium">Costo base sin gestión:</span>
+          <span id="baselineCost" class="text-xs font-bold text-rose-400">$0.00</span>
+        </div>
+
+        <div id="loadsList" class="space-y-2.5 max-h-[520px] overflow-y-auto pr-1"></div>
+
+        <div class="mt-5 pt-4 border-t border-slate-800">
+          <h4 class="text-xs font-semibold text-slate-300 mb-2 flex items-center gap-2">
+            <i data-lucide="pie-chart" class="w-3.5 h-3.5 text-shift-400"></i>
+            Consumo por Categoría (después)
+          </h4>
+          <div class="h-44 w-full"><canvas id="categoryChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- =================== ANÁLISIS FINANCIERO =================== -->
+  <section class="glass rounded-2xl p-6 shadow-xl space-y-6 fade-up">
+    <div class="border-b border-slate-800 pb-4">
+      <h2 class="text-base font-bold text-white flex items-center gap-2">
+        <i data-lucide="line-chart" class="w-5 h-5 text-emerald-400"></i>
+        Impacto Económico de la Respuesta de la Demanda
+      </h2>
+      <p class="text-xs text-slate-400">Comparativo de costo y proyección mensual/anual con y sin desplazamiento de cargas</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80">
+        <span class="text-xs text-slate-400 block mb-1">Costo Diario (Antes)</span>
+        <span id="finCostBefore" class="text-2xl font-bold text-rose-400">$0.00</span>
+        <p class="text-[10px] text-slate-500 mt-1">Sin gestión de cargas</p>
+      </div>
+      <div class="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80">
+        <span class="text-xs text-slate-400 block mb-1">Costo Diario (Después)</span>
+        <span id="finCostAfter" class="text-2xl font-bold text-emerald-400">$0.00</span>
+        <p class="text-[10px] text-slate-500 mt-1">Con respuesta de la demanda</p>
+      </div>
+      <div class="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80">
+        <span class="text-xs text-slate-400 block mb-1">Ahorro Anualizado</span>
+        <span id="finAnnualSavings" class="text-2xl font-bold text-sky-400">$0.00</span>
+        <p class="text-[10px] text-slate-500 mt-1">Extrapolado a 365 días</p>
+      </div>
+      <div class="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80">
+        <span class="text-xs text-slate-400 block mb-1">Reducción de Costo</span>
+        <span id="finPercent" class="text-2xl font-bold text-purple-400">0.0%</span>
+        <p class="text-[10px] text-slate-500 mt-1">Vs. escenario base</p>
+      </div>
+    </div>
+
+    <div>
+      <h4 class="text-xs font-semibold text-slate-300 mb-3 flex items-center gap-2">
+        <i data-lucide="bar-chart-3" class="w-4 h-4 text-grid-400"></i>
+        Comparativa Mensual — 12 Meses
+      </h4>
+      <div class="h-56 w-full"><canvas id="savingsChart"></canvas></div>
+    </div>
+  </section>
+
+  <!-- =================== PRINCIPIOS SMART GRID =================== -->
+  <section class="glass rounded-2xl p-6 shadow-xl space-y-5 fade-up">
+    <div class="border-b border-slate-800 pb-4">
+      <h2 class="text-base font-bold text-white flex items-center gap-2">
+        <i data-lucide="book-open" class="w-5 h-5 text-grid-400"></i>
+        Principios de una Red Eléctrica Inteligente (Smart Grid)
+      </h2>
+      <p class="text-xs text-slate-400">Fundamentos que sustentan la simulación anterior</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <article class="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80 tile-hover">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="p-1.5 rounded-lg bg-grid-500/10 text-grid-400"><i data-lucide="radio" class="w-4 h-4"></i></div>
+          <h3 class="text-sm font-bold text-white">1. Medición Inteligente y Visibilidad</h3>
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">Medidores inteligentes (smart meters) reportan consumo en intervalos de minutos. Esto convierte una red "ciega" en un sistema observable en tiempo real: el operador y el usuario saben cuándo y cómo se consume.</p>
+      </article>
+
+      <article class="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80 tile-hover">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="p-1.5 rounded-lg bg-shift-500/10 text-shift-400"><i data-lucide="timer" class="w-4 h-4"></i></div>
+          <h3 class="text-sm font-bold text-white">2. Respuesta de la Demanda</h3>
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">El consumo deja de ser rígido: el usuario desplaza cargas flexibles (lavadora, carga de VE, bomba) fuera de las horas punta. Es exactamente lo que simula esta aplicación al mover un bloque de carga.</p>
+      </article>
+
+      <article class="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80 tile-hover">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400"><i data-lucide="coins" class="w-4 h-4"></i></div>
+          <h3 class="text-sm font-bold text-white">3. Tarifas Dinámicas</h3>
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">El precio de la energía refleja el costo real de generarla y transportarla en cada franja. Valle, media y punta envían una señal económica que incentiva el consumo en horas de baja demanda.</p>
+      </article>
+
+      <article class="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80 tile-hover">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="p-1.5 rounded-lg bg-rose-500/10 text-rose-400"><i data-lucide="triangle-alert" class="w-4 h-4"></i></div>
+          <h3 class="text-sm font-bold text-white">4. Gestión del Pico y Confiabilidad</h3>
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">Aplanar la curva reduce el uso de plantas de arranque rápido (peaking plants), caras y contaminantes. Menor pico máximo = menos sobrecarga de transformadores y menor riesgo de apagón.</p>
+      </article>
+
+      <article class="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80 tile-hover">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="p-1.5 rounded-lg bg-amber-500/10 text-amber-400"><i data-lucide="sun" class="w-4 h-4"></i></div>
+          <h3 class="text-sm font-bold text-white">5. Integración de Renovables</h3>
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">La generación solar y eólica es variable. Una red inteligente con almacenamiento y demanda flexible absorbe esos excedentes y compensa los valles, en lugar de desperdiciarlos.</p>
+      </article>
+
+      <article class="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80 tile-hover">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="p-1.5 rounded-lg bg-purple-500/10 text-purple-400"><i data-lucide="cpu" class="w-4 h-4"></i></div>
+          <h3 class="text-sm font-bold text-white">6. Automatización y Control</h3>
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">Protocolos como OpenADR o IEEE 2030.5 permiten que electrodomésticos y sistemas de gestión energética (HEMS) respondan automáticamente a señales de precio o de red, sin intervención humana.</p>
+      </article>
+    </div>
+  </section>
+
+</main>
+
+<footer class="border-t border-slate-800/80 bg-slate-950 py-6 text-center text-xs text-slate-500 mt-8">
+  <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+    <p>© 2026 GridShift DR Suite. Todos los derechos reservados.</p>
+    <p class="text-slate-600">Simulación de Respuesta de la Demanda · Smart Grid</p>
+  </div>
+</footer>
+
+<!-- =================== MODAL INFORME =================== -->
+<div id="reportModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+  <div class="glass border border-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-4 toast-in max-h-[92vh] overflow-y-auto">
+    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+      <h3 class="text-base font-bold text-white flex items-center gap-2">
+        <i data-lucide="send" class="w-5 h-5 text-grid-400"></i>
+        Generar e Integrar Informe Técnico
+      </h3>
+      <button onclick="closeReportModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+
+    <form id="reportForm" onsubmit="sendReportToAppScript(event)" class="space-y-4">
+      <div>
+        <label class="block text-xs text-slate-300 font-medium mb-1">Nombre del Cliente / Proyecto *</label>
+        <input type="text" id="reportClientName" required placeholder="Ej. Residencia 1" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:border-grid-500 focus:outline-none">
+      </div>
+
+      <div>
+        <label class="block text-xs text-slate-300 font-medium mb-1">Correo Electrónico de Destino *</label>
+        <input type="email" id="reportEmail" required placeholder="cliente@correo.com" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:border-grid-500 focus:outline-none">
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-slate-300 font-medium mb-1">Ubicación / Ciudad</label>
+          <input type="text" id="reportLocation" placeholder="Ej. Riohacha, La Guajira" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:border-grid-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-300 font-medium mb-1">Observaciones</label>
+          <input type="text" id="reportNotes" placeholder="Notas adicionales..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:border-grid-500 focus:outline-none">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs text-slate-300 font-medium mb-1">URL de Google Apps Script Web App *</label>
+        <input type="url" id="scriptUrlInput" required placeholder="[script.google.com](https://script.google.com/macros/s/)" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-amber-400 font-mono text-[11px] focus:border-grid-500 focus:outline-none">
+      </div>
+
+      <div class="p-3 bg-slate-950/70 rounded-xl border border-slate-800 text-[10px] text-slate-400 leading-relaxed">
+        El informe incluye: perfil antes/después, picos, energía total conservada, costos y ahorro. Se envía por correo y se registra como una nueva fila en la hoja de cálculo de Google vinculada al script.
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+        <button type="button" onclick="closeReportModal()" class="px-4 py-2 rounded-lg text-xs border border-slate-800 text-slate-300 hover:bg-slate-800">Cancelar</button>
+        <button type="submit" id="submitReportBtn" class="px-5 py-2 rounded-lg text-xs bg-gradient-to-r from-grid-500 to-shift-500 text-slate-950 font-bold hover:opacity-90">Enviar e Integrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- =================== MODAL CUSTOM LOAD =================== -->
+<div id="customModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+  <div class="glass border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4 toast-in">
+    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+      <h3 class="text-base font-bold text-white">Agregar Nueva Carga</h3>
+      <button onclick="closeCustomModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <form onsubmit="handleAddLoad(event)" class="space-y-4">
+      <div>
+        <label class="block text-xs text-slate-300 font-medium mb-1">Nombre del Dispositivo</label>
+        <input type="text" id="newLoadName" required placeholder="Ej. Cargador Vehículo Eléctrico" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-slate-300 font-medium mb-1">Potencia (kW)</label>
+          <input type="number" id="newLoadPower" required min="0.05" step="0.05" placeholder="1.5" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-300 font-medium mb-1">Duración (horas)</label>
+          <input type="number" id="newLoadDuration" required min="1" max="8" step="1" placeholder="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-slate-300 font-medium mb-1">Hora de inicio por defecto</label>
+          <input type="number" id="newLoadStart" required min="0" max="23" step="1" placeholder="19" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-300 font-medium mb-1">Categoría</label>
+          <select id="newLoadCategory" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
+            <option>Climatización</option>
+            <option>Refrigeración</option>
+            <option>Lavandería</option>
+            <option>Movilidad Eléctrica</option>
+            <option>Cocina</option>
+            <option>Iluminación</option>
+            <option>Otros</option>
+          </select>
+        </div>
+      </div>
+      <label class="flex items-center gap-2 text-xs text-slate-300">
+        <input type="checkbox" id="newLoadFlexible" checked class="w-4 h-4 rounded bg-slate-950 border-slate-700">
+        Carga flexible (puede desplazarse de horario)
+      </label>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeCustomModal()" class="px-4 py-2 rounded-lg text-xs border border-slate-800 text-slate-300">Cancelar</button>
+        <button type="submit" class="px-4 py-2 rounded-lg text-xs bg-shift-500 text-slate-950 font-bold">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- =================== MODAL DESPLAZAR CARGA =================== -->
+<div id="shiftModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+  <div class="glass border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4 toast-in">
+    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+      <h3 class="text-base font-bold text-white flex items-center gap-2">
+        <i data-lucide="move-horizontal" class="w-5 h-5 text-shift-400"></i>
+        Desplazar Carga
+      </h3>
+      <button onclick="closeShiftModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div>
+      <p class="text-xs text-slate-400 mb-3">Carga seleccionada: <span id="shiftLoadName" class="font-bold text-white"></span></p>
+      <label class="block text-xs text-slate-300 font-medium mb-1">Nueva hora de inicio (0–23)</label>
+      <input type="number" id="shiftStartInput" min="0" max="23" step="1" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:border-shift-500 focus:outline-none">
+      <p id="shiftHint" class="text-[10px] text-slate-500 mt-2"></p>
+      <p id="shiftWarning" class="text-[10px] text-rose-400 mt-1 hidden">La carga excede el final del día (24:00). Ajusta la hora de inicio.</p>
+    </div>
+    <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+      <button type="button" onclick="restoreLoad()" class="px-4 py-2 rounded-lg text-xs border border-slate-800 text-slate-300 hover:bg-slate-800">Restaurar original</button>
+      <button type="button" onclick="applyShift()" class="px-5 py-2 rounded-lg text-xs bg-gradient-to-r from-shift-500 to-grid-500 text-slate-950 font-bold">Aplicar Desplazamiento</button>
+    </div>
+  </div>
+</div>
+
+<div id="toastHost" class="fixed bottom-5 right-5 z-[60] space-y-2"></div>
+
+<script>
+/* =========================================================
+   1. DATOS BASE
+   ========================================================= */
+const defaultLoads = [
+  { id:'l1', name:'Aire Acondicionado', power:1.2,  duration:6, start:18, category:'Climatización',      flexible:true  },
+  { id:'l2', name:'Refrigerador No-Frost', power:0.18, duration:24, start:0, category:'Refrigeración',     flexible:false },
+  { id:'l3', name:'Iluminación LED', power:0.1,  duration:5, start:18, category:'Iluminación',           flexible:false },
+  { id:'l4', name:'Lavadora', power:1.5,  duration:2, start:19, category:'Lavandería',                 flexible:true  },
+  { id:'l5', name:'Cargador Vehículo Eléctrico', power:3.3, duration:4, start:19, category:'Movilidad Eléctrica', flexible:true },
+  { id:'l6', name:'Workstation / Laptop', power:0.25, duration:8, start:9, category:'Otros',              flexible:true  },
+  { id:'l7', name:'Bomba de Agua', power:0.8, duration:2, start:12, category:'Otros',                     flexible:true  }
+];
+
+const HOURS = Array.from({length:24}, (_,i)=>i);
+let loads = JSON.parse(JSON.stringify(defaultLoads));
+let baselineStarts = {};
+loads.forEach(l => baselineStarts[l.id] = l.start);
+
+let demandChart, tariffChart, categoryChart, savingsChart;
+let selectedShiftId = null;
+let currentDragId = null;
+
+/* =========================================================
+   2. TARIFAS Y FRANJAS
+   ========================================================= */
+function getTariffs(){
+  return {
+    valley: Math.max(0.001, parseFloat(document.getElementById('tariffValley').value) || 0.08),
+    mid:    Math.max(0.001, parseFloat(document.getElementById('tariffMid').value) || 0.16),
+    peak:   Math.max(0.001, parseFloat(document.getElementById('tariffPeak').value) || 0.32)
+  };
+}
+function hourBand(h){
+  if (h >= 0  && h < 7)  return 'valley';
+  if (h >= 7  && h < 18) return 'mid';
+  if (h >= 18 && h < 23) return 'peak';
+  return 'valley'; // 23:00 - 24:00
+}
+function priceOf(h){ return getTariffs()[hourBand(h)]; }
+function isAllowed(h){ return hourBand(h) !== 'peak'; }  // horas punta cerradas para cargas flexibles
+
+/* =========================================================
+   3. PERFILES DE DEMANDA (ANTES / DESPUÉS)
+   Cada carga reparte su energía ENERGÍA = potencia × duración
+   sobre horas enteras, con la última hora fraccionaria.
+   => la energía total se conserva siempre.
+   ========================================================= */
+function buildProfile(startMap){
+  const profile = new Array(24).fill(0);
+  loads.forEach(l => {
+    const start = startMap[l.id] !== undefined ? startMap[l.id] : l.start;
+    const p = l.power;
+    let remaining = l.duration;
+    let h = start;
+    // arranque fraccionario si duration no es entero
+    const firstFraction = Math.min(1, remaining);
+    if (firstFraction > 0 && h < 24) { profile[h] += p * firstFraction; remaining -= firstFraction; h++; }
+    while (remaining > 0 && h < 24) {
+      const slice = Math.min(1, remaining);
+      profile[h] += p * slice;
+      remaining -= slice;
+      h++;
+    }
+  });
+  return profile.map(v => parseFloat(v.toFixed(4)));
+}
+
+function profileEnergy(profile){
+  return parseFloat(profile.reduce((a,b)=>a+b,0).toFixed(4));
+}
+
+function profileCost(profile){
+  let c = 0;
+  profile.forEach((kw,h) => { c += kw * priceOf(h); });
+  return parseFloat(c.toFixed(4));
+}
+
+function peakOf(profile){ return Math.max(...profile); }
+
+function loadFactor(profile){
+  const total = profileEnergy(profile);
+  const avg = total / 24;
+  const pk = peakOf(profile);
+  return pk > 0 ? parseFloat((avg / pk).toFixed(3)) : 0;
+}
+
+/* =========================================================
+   4. RENDER — LISTA DE CARGAS
+   ========================================================= */
+function renderLoads(){
+  const host = document.getElementById('loadsList');
+  host.innerHTML = '';
+  loads.forEach((l, idx) => {
+    const energy = parseFloat((l.power * l.duration).toFixed(2));
+    const costBase = computeLoadCost(l, baselineStarts[l.id]);
+    const costNow  = computeLoadCost(l, l.start);
+    const moved = l.start !== baselineStarts[l.id];
+    const band = hourBand(l.start);
+    const bandColor = band==='peak' ? 'text-rose-400' : band==='mid' ? 'text-amber-400' : 'text-emerald-400';
+    const bandLabel = band==='peak' ? 'PUNTA' : band==='mid' ? 'MEDIA' : 'VALLE';
+
+    const el = document.createElement('div');
+    el.className = `load-chip p-3 rounded-xl border ${moved ? 'bg-shift-500/10 border-shift-500/40' : 'bg-slate-900/90 border-slate-700/80'}`;
+    el.setAttribute('draggable', l.flexible);
+    el.dataset.id = l.id;
+
+    el.innerHTML = `
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5">
+            <h4 class="text-xs font-semibold text-white truncate">${l.name}</h4>
+            ${l.flexible
+              ? `<span class="text-[8px] font-bold px-1.5 py-0.5 rounded bg-shift-500/20 text-shift-400 border border-shift-500/30">FLEX</span>`
+              : `<span class="text-[8px] font-bold px-1.5 py-0.5 rounded bg-slate-700/40 text-slate-400 border border-slate-600/40">FIJA</span>`}
+          </div>
+          <p class="text-[10px] text-slate-400 mt-0.5">${l.category} · ${l.power} kW × ${l.duration} h = <span class="text-sky-400 font-semibold">${energy} kWh</span></p>
+        </div>
+        <div class="text-right shrink-0">
+          <div class="text-[10px] ${bandColor} font-bold">${bandLabel}</div>
+          <div class="text-[10px] text-slate-400 font-mono">${String(l.start).padStart(2,'0')}:00 → ${String((l.start+l.duration)%24).padStart(2,'0')}:00</div>
+        </div>
+      </div>
+      <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-800/70">
+        <div class="text-[10px] text-slate-500">
+          Costo: <span class="font-bold ${moved ? 'text-emerald-400' : 'text-slate-300'}">$${costNow.toFixed(3)}</span>
+          ${moved ? `<span class="text-slate-600 line-through ml-1">$${costBase.toFixed(3)}</span>` : ''}
+        </div>
+        <div class="flex items-center gap-1">
+          ${l.flexible ? `
+            <button onclick="openShiftModal('${l.id}')" class="px-2 py-1 rounded-md bg-shift-500/15 hover:bg-shift-500/30 text-shift-400 text-[10px] font-bold border border-shift-500/30 transition-colors">Desplazar</button>` : ''}
+          <button onclick="removeLoad('${l.id}')" class="p-1 rounded-md text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        </div>
+      </div>`;
+
+    if (l.flexible) {
+      el.addEventListener('dragstart', e => {
+        currentDragId = l.id;
+        el.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', l.id);
+      });
+      el.addEventListener('dragend', () => { el.classList.remove('dragging'); currentDragId = null; });
+    }
+    host.appendChild(el);
+  });
+  lucide.createIcons();
+}
+
+function computeLoadCost(l, startHour){
+  let cost = 0, remaining = l.duration, h = startHour;
+  while (remaining > 0 && h < 24) {
+    const slice = Math.min(1, remaining);
+    cost += l.power * slice * priceOf(h);
+    remaining -= slice; h++;
+  }
+  return parseFloat(cost.toFixed(4));
+}
+
+/* =========================================================
+   5. MÉTRICAS GLOBALES
+   ========================================================= */
+function shiftMap(){ const m={}; loads.forEach(l=>m[l.id]=l.start); return m; }
+function baselineMap(){ return {...baselineStarts}; }
+
+function computeMetrics(){
+  const before = buildProfile(baselineMap());
+  const after  = buildProfile(shiftMap());
+  const energyBefore = profileEnergy(before);
+  const energyAfter  = profileEnergy(after);
+  const costBefore   = profileCost(before);
+  const costAfter    = profileCost(after);
+  const peakBefore   = peakOf(before);
+  const peakAfter    = peakOf(after);
+  return {
+    before, after,
+    energyBefore, energyAfter,
+    costBefore, costAfter,
+    peakBefore, peakAfter,
+    conserved: Math.abs(energyBefore - energyAfter) < 0.01,
+    savingsDaily: parseFloat((costBefore - costAfter).toFixed(4)),
+    peakReduction: peakBefore > 0 ? parseFloat((((peakBefore - peakAfter)/peakBefore)*100).toFixed(1)) : 0,
+    loadFactorBefore: loadFactor(before),
+    loadFactorAfter: loadFactor(after)
+  };
+}
+
+/* =========================================================
+   6. UI UPDATE
+   ========================================================= */
+function updateAll(){
+  const m = computeMetrics();
+  const tariffs = getTariffs();
+
+  // KPIs
+  document.getElementById('kpiTotalEnergy').textContent = m.energyAfter.toFixed(1);
+  const consEl = document.getElementById('kpiConservation');
+  if (m.conserved) {
+    consEl.textContent = `Conservado: ${m.energyBefore.toFixed(1)} = ${m.energyAfter.toFixed(1)} kWh`;
+    consEl.parentElement.className = 'text-[11px] text-emerald-400 mt-2 flex items-center gap-1';
+  } else {
+    consEl.textContent = `⚠ Descuadre: ${m.energyBefore.toFixed(1)} vs ${m.energyAfter.toFixed(1)} kWh`;
+    consEl.parentElement.className = 'text-[11px] text-rose-400 mt-2 flex items-center gap-1';
+  }
+
+  document.getElementById('kpiPeak').textContent = m.peakAfter.toFixed(2);
+  const pkR = document.getElementById('kpiPeakReduction');
+  if (m.peakReduction > 0.05) {
+    pkR.textContent = `▼ ${m.peakReduction}% vs pico base (${m.peakBefore.toFixed(2)} kW)`;
+    pkR.parentElement.className = 'text-[11px] text-emerald-400 mt-2 flex items-center gap-1';
+  } else if (m.peakReduction < -0.05) {
+    pkR.textContent = `▲ ${Math.abs(m.peakReduction)}% sobre pico base`;
+    pkR.parentElement.className = 'text-[11px] text-rose-400 mt-2 flex items-center gap-1';
+  } else {
+    pkR.textContent = 'Sin desplazamiento aplicado';
+    pkR.parentElement.className = 'text-[11px] text-slate-500 mt-2 flex items-center gap-1';
+  }
+
+  document.getElementById('kpiDailyCost').textContent = `$${m.costAfter.toFixed(2)}`;
+  const badge = document.getElementById('kpiCostBadge');
+  const savePct = m.costBefore > 0 ? (m.savingsDaily / m.costBefore) * 100 : 0;
+  if (savePct > 0.05) {
+    badge.textContent = `-${savePct.toFixed(0)}%`;
+    badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300';
+  } else {
+    badge.textContent = 'Base';
+    badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-700/40 text-slate-400';
+  }
+  document.getElementById('kpiSavings').textContent = `Ahorro: $${m.savingsDaily.toFixed(2)}/día`;
+
+  const flexTotal = loads.filter(l=>l.flexible).length;
+  const flexShifted = loads.filter(l=>l.flexible && l.start !== baselineStarts[l.id]).length;
+  document.getElementById('kpiShifted').textContent = flexShifted;
+  document.getElementById('kpiShiftableTotal').textContent = flexTotal;
+  document.getElementById('kpiShiftBar').style.width = flexTotal ? `${(flexShifted/flexTotal)*100}%` : '0%';
+
+  // Status badge
+  const sb = document.getElementById('statusBadge'), st = document.getElementById('statusText');
+  if (savePct > 5) {
+    sb.className = "hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
+    st.textContent = `Ahorro activo: -${savePct.toFixed(0)}%`;
+  } else if (m.peakReduction > 5) {
+    sb.className = "hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-sky-500/10 text-sky-400 border border-sky-500/30";
+    st.textContent = `Pico reducido -${m.peakReduction.toFixed(0)}%`;
+  } else {
+    sb.className = "hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30";
+    st.textContent = "Cargas sin optimizar";
+  }
+
+  // Stats de curva
+  document.getElementById('statPeakBefore').textContent = `${m.peakBefore.toFixed(2)} kW`;
+  document.getElementById('statPeakAfter').textContent  = `${m.peakAfter.toFixed(2)} kW`;
+  document.getElementById('statPeakDelta').textContent  = `${m.peakReduction.toFixed(1)}%`;
+  document.getElementById('statLoadFactor').textContent = m.loadFactorAfter.toFixed(3);
+
+  // Financiero
+  document.getElementById('baselineCost').textContent   = `$${m.costBefore.toFixed(2)}`;
+  document.getElementById('finCostBefore').textContent  = `$${m.costBefore.toFixed(2)}`;
+  document.getElementById('finCostAfter').textContent   = `$${m.costAfter.toFixed(2)}`;
+  document.getElementById('finAnnualSavings').textContent = `$${(m.savingsDaily*365).toFixed(2)}`;
+  document.getElementById('finPercent').textContent = `${Math.max(0,savePct).toFixed(1)}%`;
+
+  // Canvas readouts
+  document.getElementById('canvasDemandReadout').textContent = `${m.peakAfter.toFixed(2)} kW`;
+  const sr = document.getElementById('canvasShiftReadout');
+  sr.textContent = flexShifted === 0 ? 'Ninguna carga desplazada' : `${flexShifted} carga(s) desplazada(s)`;
+
+  renderDemandChart(m.before, m.after);
+  renderTariffChart(tariffs);
+  renderCategoryChart();
+  renderSavingsChart(m.costBefore, m.costAfter);
+
+  renderLoads();
+}
+
+/* =========================================================
+   7. GRÁFICOS
+   ========================================================= */
+const labels24 = HOURS.map(h => `${String(h).padStart(2,'0')}:00`);
+
+function renderDemandChart(before, after){
+  const bandColors = HOURS.map(h => hourBand(h)==='peak' ? 'rgba(244,63,94,.18)' : hourBand(h)==='mid' ? 'rgba(251,191,36,.10)' : 'rgba(16,185,129,.12)');
+
+  if (!demandChart) {
+    const ctx = document.getElementById('demandChart').getContext('2d');
+    demandChart = new Chart(ctx, {
+      type:'bar',
+      data:{ labels: labels24, datasets:[
+        { label:'Antes (kW)',  data: before, backgroundColor:'rgba(244,63,94,.55)',  borderColor:'rgba(244,63,94,.9)',  borderWidth:1, borderRadius:3, order:2 },
+        { label:'Después (kW)',data: after,  backgroundColor:'rgba(16,185,129,.55)', borderColor:'rgba(16,185,129,.9)', borderWidth:1, borderRadius:3, order:1 },
+        { label:'Ventana permitida', data: HOURS.map(()=>null), backgroundColor: bandColors, order:3, type:'bar' }
+      ]},
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        animation:{ duration:600, easing:'easeOutQuart' },
+        plugins:{
+          legend:{ labels:{ color:'#94a3b8', font:{size:11}, usePointStyle:true, boxWidth:8 } },
+          tooltip:{ callbacks:{ label:c => `${c.dataset.label}: ${Number(c.parsed.y).toFixed(2)} kW · franja ${hourBand(c.dataIndex).toUpperCase()} · $${priceOf(c.dataIndex).toFixed(2)}/kWh` } }
+        },
+        scales:{
+          x:{ grid:{ color:'rgba(255,255,255,.04)' }, ticks:{ color:'#94a3b8', font:{size:9}, maxRotation:0, autoSkip:false } },
+          y:{ grid:{ color:'rgba(255,255,255,.05)' }, ticks:{ color:'#94a3b8' }, beginAtZero:true, title:{ display:true, text:'kW', color:'#64748b', font:{size:10} } }
+        }
+      }
+    });
+    attachDropTargets();
+  } else {
+    demandChart.data.datasets[0].data = before;
+    demandChart.data.datasets[1].data = after;
+    demandChart.data.datasets[2].backgroundColor = bandColors;
+    demandChart.update('none');
+  }
+}
+
+function attachDropTargets(){
+  const canvas = document.getElementById('demandChart');
+  const wrap = canvas.parentElement;
+  wrap.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect='move'; wrap.classList.add('drop-ok'); });
+  wrap.addEventListener('dragleave', () => wrap.classList.remove('drop-ok'));
+  wrap.addEventListener('drop', e => {
+    e.preventDefault();
+    wrap.classList.remove('drop-ok');
+    const id = e.dataTransfer.getData('text/plain') || currentDragId;
+    if (!id) return;
+    const load = loads.find(l => l.id === id);
+    if (!load || !load.flexible) { showToast('Solo las cargas flexibles pueden desplazarse.', 'warn'); return; }
+
+    const rect = canvas.getBoundingClientRect();
+    const relX = (e.clientX - rect.left) / rect.width;
+    const hourIdx = Math.max(0, Math.min(23, Math.floor(relX * 24)));
+    tryShift(load, hourIdx);
+  });
+}
+
+function tryShift(load, newStart){
+  if (newStart + load.duration > 24) {
+    showToast(`La carga excede el final del día. Inicio máximo: ${24 - load.duration}:00`, 'warn');
+    return false;
+  }
+  load.start = newStart;
+  showToast(`"${load.name}" movida a ${String(newStart).padStart(2,'0')}:00 · energía conservada (${(load.power*load.duration).toFixed(2)} kWh)`, 'ok');
+  updateAll();
+  return true;
+}
+
+function renderTariffChart(t){
+  const data = HOURS.map(h => priceOf(h));
+  const colors = HOURS.map(h => {
+    const b = hourBand(h);
+    return b==='peak' ? 'rgba(244,63,94,.75)' : b==='mid' ? 'rgba(251,191,36,.65)' : 'rgba(16,185,129,.7)';
+  });
+
+  if (!tariffChart) {
+    const ctx = document.getElementById('tariffChart').getContext('2d');
+    tariffChart = new Chart(ctx, {
+      type:'bar',
+      data:{ labels: labels24, datasets:[{ label:'$/kWh', data, backgroundColor:colors, borderRadius:3 }] },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        animation:{ duration:500 },
+        plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:c=>`Franja ${hourBand(c.dataIndex).toUpperCase()} — $${c.parsed.y.toFixed(3)}/kWh` } } },
+        scales:{
+          x:{ grid:{ display:false }, ticks:{ color:'#64748b', font:{size:8}, maxRotation:0, autoSkip:true, maxTicksLimit:12 } },
+          y:{ grid:{ color:'rgba(255,255,255,.04)' }, ticks:{ color:'#94a3b8', font:{size:9} }, beginAtZero:true }
+        }
+      }
+    });
+  } else {
+    tariffChart.data.datasets[0].data = data;
+    tariffChart.data.datasets[0].backgroundColor = colors;
+    tariffChart.update('none');
+  }
+}
+
+function renderCategoryChart(){
+  const totals = {};
+  loads.forEach(l => {
+    totals[l.category] = (totals[l.category] || 0) + l.power * l.duration;
+  });
+  const labels = Object.keys(totals), data = Object.values(totals).map(v=>parseFloat(v.toFixed(2)));
+  const colors = ['#38bdf8','#a855f7','#34d399','#facc15','#fb7185','#fb923c','#22d3ee'];
+
+  if (!categoryChart) {
+    const ctx = document.getElementById('categoryChart').getContext('2d');
+    categoryChart = new Chart(ctx, {
+      type:'doughnut',
+      data:{ labels: labels.length?labels:['Sin Cargas'], datasets:[{ data: data.length?data:[1], backgroundColor: colors, borderWidth:0 }] },
+      options:{ responsive:true, maintainAspectRatio:false, cutout:'68%',
+        animation:{ animateRotate:true, duration:700 },
+        plugins:{ legend:{ position:'right', labels:{ color:'#94a3b8', font:{size:9}, boxWidth:8, usePointStyle:true } } } }
+    });
+  } else {
+    categoryChart.data.labels = labels.length?labels:['Sin Cargas'];
+    categoryChart.data.datasets[0].data = data.length?data:[1];
+    categoryChart.update();
+  }
+}
+
+function renderSavingsChart(costBefore, costAfter){
+  const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const beforeM = months.map(()=>parseFloat((costBefore*30).toFixed(2)));
+  const afterM  = months.map(()=>parseFloat((costAfter*30).toFixed(2)));
+
+  if (!savingsChart) {
+    const ctx = document.getElementById('savingsChart').getContext('2d');
+    savingsChart = new Chart(ctx, {
+      type:'bar',
+      data:{ labels: months, datasets:[
+        { label:'Costo mensual sin gestión ($)', data:beforeM, backgroundColor:'rgba(244,63,94,.6)', borderRadius:4 },
+        { label:'Costo mensual con respuesta de demanda ($)', data:afterM, backgroundColor:'rgba(16,185,129,.65)', borderRadius:4 }
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false,
+        animation:{ duration:600 },
+        plugins:{ legend:{ labels:{ color:'#94a3b8', font:{size:10}, usePointStyle:true, boxWidth:8 } },
+          tooltip:{ callbacks:{ footer: items => `Ahorro: $${(items[0].parsed.y - items[1].parsed.y).toFixed(2)}/mes` } } },
+        scales:{ x:{ grid:{ display:false }, ticks:{ color:'#94a3b8', font:{size:10} } },
+                 y:{ grid:{ color:'rgba(255,255,255,.05)' }, ticks:{ color:'#94a3b8', callback:v=>'$'+v } } } }
+    });
+  } else {
+    savingsChart.data.datasets[0].data = beforeM;
+    savingsChart.data.datasets[1].data = afterM;
+    savingsChart.update('none');
+  }
+}
+
+/* =========================================================
+   8. MODALES Y ACCIONES
+   ========================================================= */
+function openReportModal(){
+  const saved = localStorage.getItem('gridShiftScriptUrl') || '';
+  if (saved) document.getElementById('scriptUrlInput').value = saved;
+  document.getElementById('reportModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+function closeReportModal(){ document.getElementById('reportModal').classList.add('hidden'); }
+function openCustomModal(){ document.getElementById('customModal').classList.remove('hidden'); lucide.createIcons(); }
+function closeCustomModal(){ document.getElementById('customModal').classList.add('hidden'); }
+
+function openShiftModal(id){
+  const l = loads.find(x=>x.id===id);
+  if (!l) return;
+  selectedShiftId = id;
+  document.getElementById('shiftLoadName').textContent = `${l.name} (${l.power} kW × ${l.duration} h)`;
+  document.getElementById('shiftStartInput').value = l.start;
+  document.getElementById('shiftStartInput').max = 24 - l.duration;
+  document.getElementById('shiftHint').textContent =
+    `Duración: ${l.duration} h · inicio máximo: ${24 - l.duration}:00 · energía: ${(l.power*l.duration).toFixed(2)} kWh (constante)`;
+  document.getElementById('shiftWarning').classList.add('hidden');
+  document.getElementById('shiftModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+function closeShiftModal(){ document.getElementById('shiftModal').classList.add('hidden'); selectedShiftId=null; }
+
+function applyShift(){
+  const l = loads.find(x=>x.id===selectedShiftId);
+  if (!l) return;
+  const v = parseInt(document.getElementById('shiftStartInput').value, 10);
+  if (isNaN(v) || v < 0 || v > 23) return;
+  if (v + l.duration > 24) {
+    document.getElementById('shiftWarning').classList.remove('hidden');
+    return;
+  }
+  l.start = v;
+  closeShiftModal();
+  showToast(`"${l.name}" desplazada a ${String(v).padStart(2,'0')}:00 · misma energía (${(l.power*l.duration).toFixed(2)} kWh)`, 'ok');
+  updateAll();
+}
+
+function restoreLoad(){
+  const l = loads.find(x=>x.id===selectedShiftId);
+  if (!l) return;
+  l.start = baselineStarts[l.id];
+  closeShiftModal();
+  showToast(`"${l.name}" restaurada a su horario original`, 'info');
+  updateAll();
+}
+
+function removeLoad(id){
+  const l = loads.find(x=>x.id===id);
+  loads = loads.filter(x=>x.id!==id);
+  delete baselineStarts[id];
+  showToast(`"${l.name}" eliminada del análisis`, 'info');
+  updateAll();
+}
+
+function handleAddLoad(e){
+  e.preventDefault();
+  const duration = parseFloat(document.getElementById('newLoadDuration').value);
+  const start = parseInt(document.getElementById('newLoadStart').value, 10);
+  if (start + duration > 24) { showToast('La carga no cabe en el día desde esa hora de inicio.', 'warn'); return; }
+  const id = 'c' + Date.now();
+  const load = {
+    id,
+    name: document.getElementById('newLoadName').value,
+    power: parseFloat(document.getElementById('newLoadPower').value),
+    duration,
+    start,
+    category: document.getElementById('newLoadCategory').value,
+    flexible: document.getElementById('newLoadFlexible').checked
+  };
+  loads.push(load);
+  baselineStarts[id] = start;
+  closeCustomModal();
+  e.target.reset();
+  showToast(`Carga "${load.name}" agregada`, 'ok');
+  updateAll();
+}
+
+/* Autodesplazamiento inteligente: mueve cada carga flexible a la franja más barata disponible */
+function autoOptimize(){
+  const order = loads.filter(l=>l.flexible).sort((a,b)=>b.power*b.duration - a.power*a.duration);
+  let moved = 0;
+  const occupancy = {};
+  loads.filter(l=>!l.flexible).forEach(l => { for(let h=l.start; h<Math.min(24,l.start+l.duration); h++) occupancy[h]=(occupancy[h]||0)+l.power; });
+
+  order.forEach(l => {
+    let bestH = l.start, bestScore = Infinity;
+    for (let h=0; h+l.duration<=24; h++){
+      if (!isAllowed(h) && !isAllowed(h+l.duration-1)) continue; // evita bloques enteros en punta
+      let score = 0;
+      for (let k=0; k<l.duration; k++) score += priceOf(h+k) + (occupancy[h+k]||0)*0.15;
+      if (score < bestScore) { bestScore = score; bestH = h; }
+    }
+    if (bestH !== l.start) moved++;
+    l.start = bestH;
+    for (let k=0; k<l.duration; k++) occupancy[bestH+k] = (occupancy[bestH+k]||0) + l.power;
+  });
+
+  showToast(moved ? `Optimización aplicada: ${moved} carga(s) reubicada(s) en franjas de menor costo.` : 'Las cargas ya estaban en horarios óptimos.', 'ok');
+  updateAll();
+}
+
+function resetToDefaults(){
+  loads = JSON.parse(JSON.stringify(defaultLoads));
+  baselineStarts = {};
+  loads.forEach(l => baselineStarts[l.id] = l.start);
+  document.getElementById('tariffValley').value = 0.08;
+  document.getElementById('tariffMid').value = 0.16;
+  document.getElementById('tariffPeak').value = 0.32;
+  showToast('Simulación restablecida', 'info');
+  updateAll();
+}
+
+/* =========================================================
+   9. TOASTS
+   ========================================================= */
+function showToast(msg, type='info'){
+  const host = document.getElementById('toastHost');
+  const el = document.createElement('div');
+  const palette = {
+    ok:   'border-emerald-500/40 bg-emerald-500/10 text-emerald-300',
+    warn: 'border-amber-500/40 bg-amber-500/10 text-amber-300',
+    info: 'border-sky-500/40 bg-sky-500/10 text-sky-300'
+  }[type] || 'border-slate-700 bg-slate-800 text-slate-200';
+  el.className = `toast-in glass border ${palette} rounded-xl px-4 py-2.5 text-xs font-medium shadow-xl max-w-xs`;
+  el.textContent = msg;
+  host.appendChild(el);
+  setTimeout(()=>{ el.style.transition='opacity .3s, transform .3s'; el.style.opacity='0'; el.style.transform='translateX(12px)'; setTimeout(()=>el.remove(), 300); }, 3200);
+}
+
+/* =========================================================
+   10. ENVÍO DEL INFORME (correo + hoja de cálculo Google)
+   ========================================================= */
+async function sendReportToAppScript(event){
+  event.preventDefault();
+  const endpoint = document.getElementById('scriptUrlInput').value.trim();
+  if (!endpoint) { showToast('Ingresa la URL de tu Google Apps Script', 'warn'); return; }
+  localStorage.setItem('gridShiftScriptUrl', endpoint);
+
+  const m = computeMetrics();
+  const tariffs = getTariffs();
+  const savePct = m.costBefore > 0 ? (m.savingsDaily/m.costBefore)*100 : 0;
+
+  const shiftedDetail = loads
+    .filter(l => l.start !== baselineStarts[l.id])
+    .map(l => ({
+      name: l.name,
+      category: l.category,
+      powerKW: l.power,
+      durationH: l.duration,
+      energyKWh: parseFloat((l.power*l.duration).toFixed(2)),
+      fromHour: baselineStarts[l.id],
+      toHour: l.start,
+      costBefore: computeLoadCost(l, baselineStarts[l.id]),
+      costAfter: computeLoadCost(l, l.start)
+    }));
+
+  const payload = {
+    clientName: document.getElementById('reportClientName').value,
+    email: document.getElementById('reportEmail').value,
+    location: document.getElementById('reportLocation').value,
+    notes: document.getElementById('reportNotes').value,
+    tariffs,
+    // Energía
+    totalEnergyBeforeKWh: m.energyBefore,
+    totalEnergyAfterKWh:  m.energyAfter,
+    energyConserved: m.conserved,
+    energyDeltaKWh: parseFloat((m.energyAfter - m.energyBefore).toFixed(4)),
+    // Picos
+    peakBeforeKW: parseFloat(m.peakBefore.toFixed(3)),
+    peakAfterKW:  parseFloat(m.peakAfter.toFixed(3)),
+    peakReductionPct: m.peakReduction,
+    loadFactorBefore: m.loadFactorBefore,
+    loadFactorAfter:  m.loadFactorAfter,
+    // Costos
+    dailyCostBefore: m.costBefore,
+    dailyCostAfter:  m.costAfter,
+    dailySavings: m.savingsDaily,
+    monthlySavings: parseFloat((m.savingsDaily*30).toFixed(2)),
+    annualSavings:  parseFloat((m.savingsDaily*365).toFixed(2)),
+    savingsPct: parseFloat(savePct.toFixed(2)),
+    // Detalle
+    shiftedLoads: shiftedDetail,
+    totalLoads: loads.length,
+    flexibleLoads: loads.filter(l=>l.flexible).length
+  };
+
+  const btn = document.getElementById('submitReportBtn');
+  btn.disabled = true;
+  btn.innerText = 'Enviando...';
+
+  try {
+    await fetch(endpoint, {
+      method:'POST',
+      mode:'no-cors',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    showToast('Informe enviado. Revisa el correo y la hoja de cálculo.', 'ok');
+    closeReportModal();
+    document.getElementById('reportForm').reset();
+  } catch (err) {
+    showToast('Error al enviar: ' + err.message, 'warn');
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Enviar e Integrar';
+  }
+}
+
+/* =========================================================
+   11. CANVAS ANIMADO — FLUJO DE POTENCIA
+   ========================================================= */
+let canvas, ctx, electrons = [], t = 0;
+function initCanvas(){
+  canvas = document.getElementById('gridCanvas');
+  ctx = canvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  for (let i=0;i<45;i++) electrons.push(spawnElectron(true));
+  requestAnimationFrame(drawCanvas);
+}
+function spawnElectron(init){
+  return { x: init ? Math.random()*canvas.width : -20, lane: Math.floor(Math.random()*3), speed: 0.8+Math.random()*2.2, size: 1.2+Math.random()*1.8 };
+}
+function resizeCanvas(){
+  if (!canvas) return;
+  canvas.width = canvas.parentElement.clientWidth;
+  canvas.height = canvas.parentElement.clientHeight;
+}
+function drawCanvas(){
+  if (!ctx) return;
+  const w = canvas.width, h = canvas.height;
+  const m = computeMetrics();
+  const pk = m.peakAfter || 1;
+  t += 0.01;
+
+  // Fondo con degradado
+  const g = ctx.createLinearGradient(0,0,w,h);
+  g.addColorStop(0,'#020617'); g.addColorStop(.5,'#030a1c'); g.addColorStop(1,'#020617');
+  ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+
+  // Rejilla tenue
+  ctx.strokeStyle = 'rgba(56,189,248,.05)'; ctx.lineWidth = 1;
+  for (let x=0; x<w; x+=32){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+  for (let y=0; y<h; y+=32){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+
+  const yBase = h*0.62;
+  const genX = w*0.10, meterX = w*0.42, homeX = w*0.78;
+
+  // Líneas de transmisión
+  ctx.strokeStyle = 'rgba(148,163,184,.35)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(genX, yBase); ctx.lineTo(meterX, yBase); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(meterX, yBase); ctx.lineTo(homeX, yBase); ctx.stroke();
+
+  // Nodos
+  drawNode(genX, yBase, '#38bdf8', 'Generación');
+  drawNode(meterX, yBase, '#a855f7', 'Smart Meter');
+  drawNode(homeX, yBase, m.savingsDaily > 0 ? '#34d399' : '#fb7185', 'Hogar');
+
+  // Electrones
+  electrons.forEach(p => {
+    p.x += p.speed * (0.5 + Math.min(2, pk/2));
+    if (p.x > w){ Object.assign(p, spawnElectron(false)); }
+    const yy = yBase + (p.lane-1)*6;
+    const hue = p.x < meterX ? '56,189,248' : (m.savingsDaily>0 ? '52,211,153' : '251,113,133');
+    ctx.fillStyle = `rgba(${hue},.85)`;
+    ctx.beginPath(); ctx.arc(p.x, yy, p.size, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = `rgba(${hue},.18)`;
+    ctx.beginPath(); ctx.arc(p.x, yy, p.size*2.6, 0, Math.PI*2); ctx.fill();
+  });
+
+  // Barras de demanda en vivo (mini-histograma)
+  const barW = (w*0.5)/24;
+  const startX = w*0.25;
+  m.after.forEach((kw, i) => {
+    const bh = (kw/pk)*h*0.24;
+    const isNow = (i === Math.floor((t*6)%24));
+    ctx.fillStyle = isNow ? 'rgba(250,204,21,.85)' : hourBand(i)==='peak' ? 'rgba(244,63,94,.45)' : 'rgba(16,185,129,.40)';
+    ctx.beginPath();
+    ctx.roundRect(startX + i*barW + 1, h*0.90 - bh, barW-2, bh, 2);
+    ctx.fill();
+  });
+
+  // Sol / icono de control DR pulsante
+  const pr = 12 + Math.sin(t*3)*2.5;
+  ctx.fillStyle = 'rgba(168,85,247,.18)';
+  ctx.beginPath(); ctx.arc(w*0.90, h*0.16, pr*1.9, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#a855f7';
+  ctx.beginPath(); ctx.arc(w*0.90, h*0.16, pr*0.55, 0, Math.PI*2); ctx.fill();
+
+  requestAnimationFrame(drawCanvas);
+}
+function drawNode(x, y, color, label){
+  ctx.fillStyle = 'rgba(15,23,42,.95)';
+  ctx.strokeStyle = color; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.roundRect(x-22, y-16, 44, 32, 8); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#64748b'; ctx.font = '9px Plus Jakarta Sans, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(label, x, y+30);
+}
+
+/* =========================================================
+   12. INIT
+   ========================================================= */
+window.addEventListener('DOMContentLoaded', () => {
+  lucide.createIcons();
+  ['tariffValley','tariffMid','tariffPeak'].forEach(id =>
+    document.getElementById(id).addEventListener('input', updateAll)
+  );
+  updateAll();
+  initCanvas();
+
+  // Atajos de teclado
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'o' || e.key === 'O') autoOptimize();
+    if (e.key === 'r' || e.key === 'R') resetToDefaults();
+  });
+});
+</script>
+</body>
+</html>
