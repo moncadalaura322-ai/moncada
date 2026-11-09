@@ -347,4 +347,629 @@
             <form id="reportForm" onsubmit="sendReportToAppScript(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs text-slate-300 font-medium mb-1">Nombre del Cliente / Proyecto *</label>
-                    <input type="text" id="reportClientName" required placeholder="Ej. Residencia 1" class="w-full bg-slate-950 border border-slate-800 rounded-lg
+                    <input type="text" id="reportClientName" required placeholder="Ej. Residencia 1" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
+                </div>
+
+                <div>
+                    <label class="block text-xs text-slate-300 font-medium mb-1">Correo Electrónico de Destino *</label>
+                    <input type="email" id="reportEmail" required placeholder="cliente@correo.com" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-slate-300 font-medium mb-1">Ubicación / Ciudad</label>
+                        <input type="text" id="reportLocation" placeholder="Ej. Riohacha, La Guajira" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-300 font-medium mb-1">Observaciones</label>
+                        <input type="text" id="reportNotes" placeholder="Notas adicionales..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-slate-300 font-medium mb-1">URL de Google Apps Script Web App</label>
+                    <input type="url" id="scriptUrlInput" required placeholder="https://script.google.com/macros/s/..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-amber-400 font-mono text-[11px]">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-800 text-xs">
+                    <button type="button" onclick="closeReportModal()" class="px-4 py-2 rounded-lg border border-slate-800 text-slate-300">Cancelar</button>
+                    <button type="submit" id="submitReportBtn" class="px-5 py-2 rounded-lg bg-gradient-to-r from-solar-500 to-eco-500 text-slate-950 font-bold">Enviar e Integrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CUSTOM APPLIANCE MODAL -->
+    <div id="customModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-base font-semibold text-white">Agregar Electrodoméstico</h3>
+                <button onclick="closeCustomModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="addApplianceForm" onsubmit="handleAddAppliance(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs text-slate-300 font-medium mb-1">Nombre</label>
+                    <input type="text" id="newAppName" required placeholder="Ej. Bomba de Agua" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-slate-300 font-medium mb-1">Potencia (W)</label>
+                        <input type="number" id="newAppPower" required min="1" placeholder="1000" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-300 font-medium mb-1">Horas Uso / Día</label>
+                        <input type="number" id="newAppHours" required min="0.1" max="24" step="0.5" placeholder="4" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-300 font-medium mb-1">Categoría</label>
+                    <select id="newAppCategory" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
+                        <option value="Climatización">Climatización</option>
+                        <option value="Refrigeración">Refrigeración</option>
+                        <option value="Cocina">Cocina</option>
+                        <option value="Entretenimiento">Entretenimiento</option>
+                        <option value="Iluminación">Iluminación</option>
+                        <option value="Otros">Otros</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeCustomModal()" class="px-4 py-2 rounded-lg text-xs border border-slate-800 text-slate-300">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg text-xs bg-sky-500 text-slate-950 font-bold">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APPLICATION LOGIC -->
+    <script>
+        const defaultAppliances = [
+            { id: '1', name: 'Aire Acondicionado Inverter', power: 1200, hours: 6, active: true, category: 'Climatización' },
+            { id: '2', name: 'Refrigerador No-Frost', power: 180, hours: 24, active: true, category: 'Refrigeración' },
+            { id: '3', name: 'Iluminación LED (10 Bombillos)', power: 100, hours: 5, active: true, category: 'Iluminación' },
+            { id: '4', name: 'Workstation / Computador', power: 250, hours: 8, active: true, category: 'Entretenimiento' },
+            { id: '5', name: 'Smart TV 55"', power: 120, hours: 5, active: true, category: 'Entretenimiento' }
+        ];
+
+        let appliances = JSON.parse(JSON.stringify(defaultAppliances));
+        let hourlyChart = null;
+        let consumptionChart = null;
+        let comparisonChart = null;
+
+        function calculateSolarMetrics() {
+            const G = parseFloat(document.getElementById('inputIrradiance').value);
+            const area = parseFloat(document.getElementById('inputArea').value);
+            const eff = parseFloat(document.getElementById('inputEfficiency').value) / 100;
+            const temp = parseFloat(document.getElementById('inputTemp').value);
+            const tilt = parseFloat(document.getElementById('inputTilt').value);
+
+            const tempLossFactor = 1 - Math.max(0, (temp - 25) * 0.004);
+            const tiltRad = (tilt - 22) * Math.PI / 180;
+            const tiltFactor = Math.max(0.6, Math.cos(tiltRad));
+
+            const peakPowerKW = (area * 1000 * eff * tempLossFactor * tiltFactor) / 1000;
+
+            const hourlyData = [];
+            const hoursLabels = [];
+            let dailyTotalKWh = 0;
+
+            for (let h = 6; h <= 18; h++) {
+                hoursLabels.push(`${h}:00`);
+                const hourAngle = ((h - 6) / 12) * Math.PI;
+                const instantRatio = Math.max(0, Math.sin(hourAngle));
+                const hourKW = peakPowerKW * (G / 1000) * instantRatio;
+                hourlyData.push(parseFloat(hourKW.toFixed(2)));
+                dailyTotalKWh += hourKW;
+            }
+
+            return {
+                G, area, eff, temp, tilt,
+                peakPowerKW: parseFloat(peakPowerKW.toFixed(2)),
+                dailyTotalKWh: parseFloat(dailyTotalKWh.toFixed(2)),
+                hourlyData,
+                hoursLabels
+            };
+        }
+
+        function calculateConsumptionMetrics() {
+            let totalDailyKWh = 0;
+            let activeCount = 0;
+            const categoryTotals = {};
+
+            appliances.forEach(app => {
+                if (app.active) {
+                    activeCount++;
+                    const dailyKWh = (app.power * app.hours) / 1000;
+                    totalDailyKWh += dailyKWh;
+                    categoryTotals[app.category] = (categoryTotals[app.category] || 0) + dailyKWh;
+                }
+            });
+
+            return {
+                totalDailyKWh: parseFloat(totalDailyKWh.toFixed(2)),
+                activeCount,
+                categoryTotals
+            };
+        }
+
+        function updateUI() {
+            const solar = calculateSolarMetrics();
+            const cons = calculateConsumptionMetrics();
+            const tariff = parseFloat(document.getElementById('inputTariff').value) || 0.18;
+            const costPerM2 = parseFloat(document.getElementById('inputSystemCostM2').value) || 160;
+
+            document.getElementById('valIrradiance').textContent = solar.G;
+            document.getElementById('valArea').textContent = solar.area;
+            document.getElementById('valEfficiency').textContent = solar.eff * 100;
+            document.getElementById('valTemp').textContent = solar.temp;
+            document.getElementById('valTilt').textContent = solar.tilt;
+
+            document.getElementById('kpiProduction').textContent = solar.dailyTotalKWh.toFixed(2);
+            document.getElementById('kpiPeakPower').textContent = `${solar.peakPowerKW} kWp pico estimado`;
+
+            document.getElementById('kpiConsumption').textContent = cons.totalDailyKWh.toFixed(2);
+            document.getElementById('kpiActiveAppliances').textContent = `${cons.activeCount} de ${appliances.length} activos`;
+
+            const autonomy = cons.totalDailyKWh > 0 
+                ? Math.min(100, Math.round((solar.dailyTotalKWh / cons.totalDailyKWh) * 100))
+                : 100;
+
+            document.getElementById('kpiAutonomy').textContent = `${autonomy}%`;
+            document.getElementById('kpiAutonomyBar').style.width = `${autonomy}%`;
+
+            const statusBadge = document.getElementById('statusBadge');
+            const statusText = document.getElementById('statusText');
+            const balanceBadge = document.getElementById('kpiBalanceBadge');
+
+            if (solar.dailyTotalKWh >= cons.totalDailyKWh) {
+                statusBadge.className = "hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
+                statusText.textContent = "Sistema Autosuficiente";
+                balanceBadge.textContent = "100% Cobertura";
+                balanceBadge.className = "text-xs font-semibold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300";
+            } else {
+                statusBadge.className = "hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30";
+                statusText.textContent = "Dependiente de Red";
+                balanceBadge.textContent = `${autonomy}% Cobertura`;
+                balanceBadge.className = "text-xs font-semibold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300";
+            }
+
+            const monthlyGen = solar.dailyTotalKWh * 30;
+            const co2Saved = (monthlyGen * 0.42).toFixed(1);
+            document.getElementById('kpiCo2').textContent = co2Saved;
+            document.getElementById('kpiTrees').textContent = `Equivale a ~${Math.round(co2Saved / 1.8)} árboles plantados/mes`;
+
+            document.getElementById('canvasPowerReadout').textContent = `${(solar.peakPowerKW * (solar.G / 1000)).toFixed(2)} kW`;
+
+            const totalSystemCost = solar.area * costPerM2;
+            const coveredDailyKWh = Math.min(solar.dailyTotalKWh, cons.totalDailyKWh);
+            const surplusDailyKWh = Math.max(0, solar.dailyTotalKWh - cons.totalDailyKWh);
+
+            const monthlySavings = (coveredDailyKWh * 30 * tariff) + (surplusDailyKWh * 30 * tariff * 0.5);
+            const annualSavings = monthlySavings * 12;
+            const paybackYears = annualSavings > 0 ? (totalSystemCost / annualSavings) : 0;
+            const profit25Years = (annualSavings * 25) - totalSystemCost;
+
+            document.getElementById('roiTotalCost').textContent = `$${totalSystemCost.toLocaleString('en-US', {maximumFractionDigits:0})}`;
+            document.getElementById('roiMonthlySavings').textContent = `$${monthlySavings.toFixed(2)} /mes`;
+            document.getElementById('roiPaybackYears').textContent = paybackYears > 0 ? `${paybackYears.toFixed(1)} Años` : 'N/A';
+            document.getElementById('roi25YearProfit').textContent = `$${Math.max(0, profit25Years).toLocaleString('en-US', {maximumFractionDigits:0})}`;
+
+            renderHourlyChart(solar.hoursLabels, solar.hourlyData);
+            renderConsumptionChart(cons.categoryTotals);
+            renderComparisonChart(solar.dailyTotalKWh, cons.totalDailyKWh);
+        }
+
+        function renderHourlyChart(labels, data) {
+            if (!hourlyChart) {
+                const ctx = document.getElementById('solarHourlyChart').getContext('2d');
+                hourlyChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Potencia Generada (kW)',
+                            data: data,
+                            borderColor: '#facc15',
+                            backgroundColor: 'rgba(250, 204, 21, 0.15)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#eab308'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+                            y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' }, beginAtZero: true }
+                        }
+                    }
+                });
+            } else {
+                hourlyChart.data.labels = labels;
+                hourlyChart.data.datasets[0].data = data;
+                hourlyChart.update();
+            }
+        }
+
+        function renderConsumptionChart(categoryTotals) {
+            const labels = Object.keys(categoryTotals);
+            const data = Object.values(categoryTotals);
+            const colors = ['#38bdf8', '#34d399', '#facc15', '#a78bfa', '#f472b6', '#fb923c'];
+
+            if (!consumptionChart) {
+                const ctx = document.getElementById('consumptionChart').getContext('2d');
+                consumptionChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels.length ? labels : ['Sin Cargas'],
+                        datasets: [{
+                            data: data.length ? data : [1],
+                            backgroundColor: colors,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 } } } },
+                        cutout: '70%'
+                    }
+                });
+            } else {
+                consumptionChart.data.labels = labels.length ? labels : ['Sin Cargas'];
+                consumptionChart.data.datasets[0].data = data.length ? data : [1];
+                consumptionChart.update();
+            }
+        }
+
+        function renderComparisonChart(solarKWh, consKWh) {
+            if (!comparisonChart) {
+                const ctx = document.getElementById('balanceComparisonChart').getContext('2d');
+                comparisonChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Energía Diaria (kWh)'],
+                        datasets: [
+                            { label: 'Generación Solar', data: [solarKWh], backgroundColor: '#10b981', borderRadius: 8 },
+                            { label: 'Consumo Doméstico', data: [consKWh], backgroundColor: '#38bdf8', borderRadius: 8 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: { legend: { labels: { color: '#94a3b8' } } },
+                        scales: {
+                            x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' }, beginAtZero: true },
+                            y: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                        }
+                    }
+                });
+            } else {
+                comparisonChart.data.datasets[0].data = [solarKWh];
+                comparisonChart.data.datasets[1].data = [consKWh];
+                comparisonChart.update();
+            }
+        }
+
+        function renderAppliancesList() {
+            const container = document.getElementById('appliancesList');
+            container.innerHTML = '';
+
+            appliances.forEach((app, idx) => {
+                const item = document.createElement('div');
+                item.className = `p-3 rounded-xl border transition-all ${app.active ? 'bg-slate-900 border-slate-700/80' : 'bg-slate-950/40 border-slate-800/50 opacity-60'}`;
+                item.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2.5">
+                            <input type="checkbox" ${app.active ? 'checked' : ''} onchange="toggleAppliance(${idx})" class="w-4 h-4 rounded text-eco-500 bg-slate-950 border-slate-700 cursor-pointer">
+                            <div>
+                                <h4 class="text-xs font-semibold text-white leading-none">${app.name}</h4>
+                                <span class="text-[10px] text-slate-400">${app.category}</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-bold text-sky-400">${((app.power * app.hours) / 1000).toFixed(2)} kWh</span>
+                            <span class="text-[10px] text-slate-500 block">/día</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function toggleAppliance(index) {
+            appliances[index].active = !appliances[index].active;
+            renderAppliancesList();
+            updateUI();
+        }
+
+        function openCustomModal() { document.getElementById('customModal').classList.remove('hidden'); }
+        function closeCustomModal() { document.getElementById('customModal').classList.add('hidden'); }
+        
+        function openReportModal() { 
+            const savedUrl = localStorage.getItem('ecoSolarScriptUrl') || '';
+            if (savedUrl) document.getElementById('scriptUrlInput').value = savedUrl;
+            document.getElementById('reportModal').classList.remove('hidden'); 
+        }
+        function closeReportModal() { document.getElementById('reportModal').classList.add('hidden'); }
+
+        function handleAddAppliance(e) {
+            e.preventDefault();
+            appliances.push({
+                id: Date.now().toString(),
+                name: document.getElementById('newAppName').value,
+                power: parseFloat(document.getElementById('newAppPower').value),
+                hours: parseFloat(document.getElementById('newAppHours').value),
+                active: true,
+                category: document.getElementById('newAppCategory').value
+            });
+            document.getElementById('addApplianceForm').reset();
+            closeCustomModal();
+            renderAppliancesList();
+            updateUI();
+        }
+
+        async function sendReportToAppScript(event) {
+            event.preventDefault();
+            const endpoint = document.getElementById('scriptUrlInput').value.trim();
+            if (!endpoint) {
+                alert('Por favor ingresa la URL de tu Google Apps Script');
+                return;
+            }
+            localStorage.setItem('ecoSolarScriptUrl', endpoint);
+
+            const clientName = document.getElementById('reportClientName').value;
+            const email = document.getElementById('reportEmail').value;
+            const location = document.getElementById('reportLocation').value;
+            const notes = document.getElementById('reportNotes').value;
+
+            const solar = calculateSolarMetrics();
+            const cons = calculateConsumptionMetrics();
+            const tariff = parseFloat(document.getElementById('inputTariff').value) || 0.18;
+            const costPerM2 = parseFloat(document.getElementById('inputSystemCostM2').value) || 160;
+
+            const totalSystemCost = solar.area * costPerM2;
+            const coveredDailyKWh = Math.min(solar.dailyTotalKWh, cons.totalDailyKWh);
+            const surplusDailyKWh = Math.max(0, solar.dailyTotalKWh - cons.totalDailyKWh);
+            const monthlySavings = (coveredDailyKWh * 30 * tariff) + (surplusDailyKWh * 30 * tariff * 0.5);
+            const annualSavings = monthlySavings * 12;
+            const paybackYears = annualSavings > 0 ? (totalSystemCost / annualSavings) : 0;
+            const monthlyGen = solar.dailyTotalKWh * 30;
+            const co2Saved = (monthlyGen * 0.42).toFixed(1);
+            const autonomy = cons.totalDailyKWh > 0 ? Math.min(100, Math.round((solar.dailyTotalKWh / cons.totalDailyKWh) * 100)) : 100;
+
+            const payload = {
+                clientName: clientName,
+                email: email,
+                location: location,
+                notes: notes,
+                peakPowerKW: parseFloat(solar.peakPowerKW),
+                dailyTotalKWh: parseFloat(solar.dailyTotalKWh),
+                dailyConsumptionKWh: parseFloat(cons.totalDailyKWh),
+                autonomyPercentage: parseFloat(autonomy),
+                totalInvestment: parseFloat(totalSystemCost.toFixed(0)),
+                monthlySavings: parseFloat(monthlySavings.toFixed(2)),
+                paybackYears: parseFloat(paybackYears.toFixed(1)),
+                co2Saved: parseFloat(co2Saved)
+            };
+
+            const btn = document.getElementById('submitReportBtn');
+            btn.disabled = true;
+            btn.innerText = 'Enviando...';
+
+            try {
+                await fetch(endpoint, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+
+                alert('¡Informe enviado e integrado exitosamente!');
+                closeReportModal();
+            } catch (err) {
+                alert('Error al enviar el informe: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Enviar e Integrar';
+            }
+        }
+
+        function resetToDefaults() {
+            appliances = JSON.parse(JSON.stringify(defaultAppliances));
+            document.getElementById('inputIrradiance').value = 800;
+            document.getElementById('inputArea').value = 20;
+            document.getElementById('inputEfficiency').value = 20;
+            document.getElementById('inputTemp').value = 28;
+            document.getElementById('inputTilt').value = 25;
+            document.getElementById('inputTariff').value = 0.18;
+            document.getElementById('inputSystemCostM2').value = 160;
+            renderAppliancesList();
+            updateUI();
+        }
+
+        // REDESIGNED ENHANCED CANVAS SIMULATION ENGINE
+        let canvas, ctx, particles = [];
+        function initCanvas() {
+            canvas = document.getElementById('solarCanvas');
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            for (let i = 0; i < 40; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * (canvas.height / 2),
+                    speed: 1.2 + Math.random() * 2.5,
+                    length: 12 + Math.random() * 18,
+                    opacity: 0.3 + Math.random() * 0.7
+                });
+            }
+            requestAnimationFrame(drawCanvas);
+        }
+
+        function resizeCanvas() {
+            if (!canvas) return;
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+
+        function drawCanvas() {
+            if (!ctx) return;
+            const w = canvas.width;
+            const h = canvas.height;
+
+            const G = parseFloat(document.getElementById('inputIrradiance').value);
+            const tilt = parseFloat(document.getElementById('inputTilt').value);
+
+            // Dynamic sky gradient
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+            const brightness = Math.min(120, Math.max(15, G / 10));
+            skyGrad.addColorStop(0, `rgb(${15 + brightness * 0.5}, ${23 + brightness * 0.8}, ${42 + brightness})`);
+            skyGrad.addColorStop(1, '#020617');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, w, h);
+
+            // Realistic Glowing Sun
+            const sunX = w * 0.18;
+            const sunY = h * 0.28;
+            const sunGlow = ctx.createRadialGradient(sunX, sunY, 5, sunX, sunY, 60);
+            sunGlow.addColorStop(0, '#fef08a');
+            sunGlow.addColorStop(0.4, 'rgba(250, 204, 21, 0.4)');
+            sunGlow.addColorStop(1, 'rgba(250, 204, 21, 0)');
+            ctx.fillStyle = sunGlow;
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, 60, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#facc15';
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, 18, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Photons / Solar Rays Streams
+            const panelX = w * 0.5;
+            const panelY = h * 0.58;
+
+            ctx.lineWidth = 1.5;
+            particles.forEach(p => {
+                p.y += p.speed * (G / 600);
+                p.x += p.speed * 0.7;
+
+                if (p.y > panelY || p.x > w) {
+                    p.x = sunX + (Math.random() * 40 - 20);
+                    p.y = sunY + (Math.random() * 20 - 10);
+                }
+
+                ctx.strokeStyle = `rgba(250, 204, 21, ${p.opacity * (G / 1200)})`;
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p.x + p.length * 0.6, p.y + p.length);
+                ctx.stroke();
+            });
+
+            // Physics Tilting Solar Array
+            ctx.save();
+            ctx.translate(panelX, panelY);
+            ctx.rotate((-tilt * Math.PI) / 180 * 0.45);
+
+            // Panel shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(-85, 20, 170, 10);
+
+            // Panel Frame
+            ctx.fillStyle = '#0f172a';
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.roundRect(-80, -22, 160, 44, 6);
+            ctx.fill();
+            ctx.stroke();
+
+            // Silicon Photovoltaic Cells Grid
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.5)';
+            ctx.lineWidth = 1;
+            for (let i = 1; i < 6; i++) {
+                ctx.beginPath();
+                ctx.moveTo(-80 + (160 / 6) * i, -22);
+                ctx.lineTo(-80 + (160 / 6) * i, 22);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // Inverter Box Unit
+            const invX = w * 0.74;
+            const invY = h * 0.72;
+            ctx.fillStyle = '#1e293b';
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(invX - 22, invY - 26, 44, 52, 6);
+            ctx.fill();
+            ctx.stroke();
+
+            // Inverter Status LED
+            ctx.fillStyle = G > 200 ? '#10b981' : '#f59e0b';
+            ctx.beginPath();
+            ctx.arc(invX, invY - 12, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // House Building
+            const houseX = w * 0.90;
+            const houseY = h * 0.72;
+            ctx.fillStyle = '#334155';
+            ctx.beginPath();
+            ctx.moveTo(houseX - 25, houseY - 30);
+            ctx.lineTo(houseX, houseY - 50);
+            ctx.lineTo(houseX + 25, houseY - 30);
+            ctx.lineTo(houseX + 25, houseY + 25);
+            ctx.lineTo(houseX - 25, houseY + 25);
+            ctx.closePath();
+            ctx.fill();
+
+            // House Window with warm glow
+            ctx.fillStyle = '#fef08a';
+            ctx.beginPath();
+            ctx.roundRect(houseX - 10, houseY - 10, 20, 20, 3);
+            ctx.fill();
+
+            // Power Transmission Line
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(panelX, panelY + 22);
+            ctx.lineTo(invX, invY);
+            ctx.lineTo(houseX - 25, houseY);
+            ctx.stroke();
+
+            // Animated Electronic Pulses (Green Current)
+            const time = Date.now() * 0.0035;
+            const speedFactor = Math.max(0.3, G / 600);
+            ctx.fillStyle = '#34d399';
+            for (let e = 0; e < 6; e++) {
+                const offset = ((time * speedFactor + e * 0.18) % 1);
+                const px = panelX + offset * (houseX - 25 - panelX);
+                const py = (panelY + 22) + offset * (houseY - (panelY + 22));
+                ctx.beginPath();
+                ctx.arc(px, py, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            requestAnimationFrame(drawCanvas);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            ['inputIrradiance', 'inputArea', 'inputEfficiency', 'inputTemp', 'inputTilt', 'inputTariff', 'inputSystemCostM2'].forEach(id => {
+                document.getElementById(id).addEventListener('input', updateUI);
+            });
+            renderAppliancesList();
+            updateUI();
+            initCanvas();
+        });
+    </script>
+</body>
+</html>
