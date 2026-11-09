@@ -233,7 +233,7 @@
                 </div>
             </section>
 
-            <!-- RIGHT COLUMN: APPLIANCES & CONSUMPTION (SPAN 5) -->
+            <!-- RIGHT COLUMN: APPLIANCE MANAGER & CONSUMPTION (SPAN 5) -->
             <section class="lg:col-span-5 space-y-6">
                 <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 shadow-xl flex flex-col h-full">
                     <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
@@ -664,8 +664,8 @@
                                 <span class="text-xs font-bold text-sky-400">${((app.power * app.hours) / 1000).toFixed(2)} kWh</span>
                                 <span class="text-[10px] text-slate-500 block">/día</span>
                             </div>
-                            <button onclick="deleteAppliance(${idx})" class="text-slate-500 hover:text-red-400 transition-colors p-1" title="Eliminar equipo">
-                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            <button onclick="deleteAppliance(${idx})" class="text-slate-500 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-slate-800" title="Eliminar equipo">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
                             </button>
                         </div>
                     </div>
@@ -735,6 +735,7 @@
             const totalSystemCost = solar.area * costPerM2;
             const coveredDailyKWh = Math.min(solar.dailyTotalKWh, cons.totalDailyKWh);
             const surplusDailyKWh = Math.max(0, solar.dailyTotalKWh - cons.totalDailyKWh);
+
             const monthlySavings = (coveredDailyKWh * 30 * tariff) + (surplusDailyKWh * 30 * tariff * 0.5);
             const annualSavings = monthlySavings * 12;
             const paybackYears = annualSavings > 0 ? (totalSystemCost / annualSavings) : 0;
