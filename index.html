@@ -730,7 +730,7 @@
         
         <div class="ai-messages" id="aiMessages">
             <div class="ai-msg bot">
-                ¡Hola! Soy tu asistente experto en Smart Grid. Puedo explicarte cómo funciona el desplazamiento de cargas, las tarifas TOU o cómo interpretar tus resultados. ¿En qué te ayudo?
+                ¡Hola! Soy tu asistente experto en Smart Grid. Puedo explicarte cómo funciona la página, el desplazamiento de cargas, las tarifas TOU o cómo interpretar tus resultados. ¿En qué te ayudo?
             </div>
         </div>
         
@@ -1548,36 +1548,89 @@
             `;
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-            // Simulamos un pequeño retraso (0.6s) para que parezca natural
             setTimeout(() => {
                 document.getElementById(typingId).remove();
                 
-                const query = text.toLowerCase();
+                // Normalizar el texto: minúsculas y quitar acentos para facilitar la coincidencia
+                const query = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                 let botReply = "";
 
-                if (query.includes('hola') || query.includes('buenos días') || query.includes('buenas')) {
-                    botReply = "¡Hola! Soy el asistente de GridShift Pro. ¿Quieres saber sobre Smart Grids, Tarifas o cómo enviar un informe?";
-                } 
-                else if (query.includes('smart grid') || query.includes('red inteligente') || query.includes('que es')) {
-                    botReply = "Una Smart Grid es una red eléctrica que integra tecnología para equilibrar el consumo en tiempo real. Permite el flujo de energía en dos sentidos y se comunica con los electrodomésticos.";
+                // Base de conocimientos estructurada (se evalúa de arriba a abajo)
+                const knowledgeBase = [
+                    {
+                        keywords: ['hola', 'buenos dias', 'buenas tardes', 'buenas noches', 'que tal', 'saludos'],
+                        response: "¡Hola! Soy el asistente experto de GridShift Pro. Puedo explicarte cómo funciona el simulador, qué son las tarifas TOU, cómo optimizar tus cargas o cómo enviar un informe a Google Sheets. ¿Qué te gustaría saber?"
+                    },
+                    {
+                        keywords: ['para que sirve', 'que hace la pagina', 'cual es el proposito', 'de que trata', 'que es esta pagina', 'objetivo', 'para que es'],
+                        response: "Esta página es un simulador interactivo de Redes Inteligentes (Smart Grids). Su propósito es educativo: te permite entender cómo funciona la Respuesta de la Demanda. Puedes simular el consumo de tu casa y ver cómo mover tus aparatos eléctricos a horarios más baratos te ayuda a ahorrar dinero y a reducir los picos de energía en la red eléctrica."
+                    },
+                    {
+                        keywords: ['smart grid', 'red inteligente', 'red electrica inteligente'],
+                        response: "Una Smart Grid es una red eléctrica moderna que utiliza tecnología de comunicación bidireccional. A diferencia de la red tradicional, permite que los usuarios (prosumidores) no solo consuman energía, sino que también la generen (por ejemplo con paneles solares) y la inyecten de vuelta a la red. Todo esto se controla de forma automatizada para evitar apagones y ahorrar energía."
+                    },
+                    {
+                        keywords: ['respuesta de la demanda', 'desplazamiento de cargas', 'mover cargas', 'gestion de demanda'],
+                        response: "La Respuesta de la Demanda es una estrategia en la que los consumidores modifican sus hábitos de consumo eléctrico en respuesta a incentivos de precio. En lugar de usar todos los aparatos a las 7 de la noche (cuando la luz es carísima), desplazamos las tareas pesadas (como lavar ropa o cargar el carro eléctrico) a la madrugada (cuando es más barata). Esta página simula exactamente ese proceso."
+                    },
+                    {
+                        keywords: ['tarifa', 'tarifas', 'tou', 'precio', 'punta', 'valle', 'llano', 'cuesta la luz'],
+                        response: "Utilizamos tarifas TOU (Time-of-Use), que cambian según la hora. La tarifa Valle (00:00 a 06:00 y 22:00 a 24:00) es la más económica (verde). La tarifa Llano (06:00 a 17:00) es intermedia (amarilla). La tarifa Punta (17:00 a 22:00) es la más cara y donde la red sufre más (roja). Puedes modificar estos precios haciendo clic en el botón 'Editar' en la sección de Tarifas."
+                    },
+                    {
+                        keywords: ['optimizar', 'optimizacion', 'boton optimizar', 'como ahorro', 'como funciona el boton'],
+                        response: "Al presionar 'Optimizar', un algoritmo matemático analiza todos tus electrodomésticos flexibles (como la lavadora o el carro eléctrico) y los mueve automáticamente a los horarios más baratos posibles dentro de su ventana de tiempo permitida. El objetivo es minimizar el costo total y reducir el pico máximo de consumo."
+                    },
+                    {
+                        keywords: ['conservacion', 'energia total', 'desaparece energia', 'kwh', 'ley de conservacion'],
+                        response: "La sección de Conservación de Energía es una garantía técnica. Significa que al mover un aparato de hora, no estamos 'borrando' su consumo. Si antes sumabas 20 kWh al día, después de optimizar seguirás sumando 20 kWh. Solo hemos cambiado el 'cuándo' los consumes, logrando que esos mismos 20 kWh cuesten mucho menos dinero."
+                    },
+                    {
+                        keywords: ['informe', 'reporte', 'correo', 'gmail', 'google sheets', 'hoja de calculo', 'excel', 'apps script'],
+                        response: "La herramienta incluye un sistema de reportes. Al hacer clic en 'Generar Informe' en el menú superior, puedes ingresar el correo de un cliente y la URL de un Google Apps Script. Al enviarlo, el sistema calculará todos los ahorros y los registrará automáticamente en una hoja de cálculo de Google, además de enviar un correo formateado con los resultados."
+                    },
+                    {
+                        keywords: ['agregar aparato', 'nuevo electrodomestico', 'añadir', 'borrar aparato', 'eliminar', 'flexible', 'fijo'],
+                        response: "En la sección 'Gestión de Cargas' puedes hacer clic en 'Agregar' para sumar tus propios electrodomésticos indicando su potencia y horas de uso. Los marcados como FLEX son aquellos que el optimizador puede mover de hora (ej. lavadora). Los FIJO son los que deben funcionar siempre a la misma hora (ej. refrigerador). También puedes eliminarlos con el icono del basurero."
+                    },
+                    {
+                        keywords: ['simulador', 'animacion', 'grafico de la red', 'nodos', 'que es eso que se mueve'],
+                        response: "El panel superior es un simulador visual en vivo. Muestra el flujo de energía desde la Red Eléctrica (izquierda), pasando por el Medidor Inteligente (centro), hasta tu Hogar (derecha). Las partículas de colores que se mueven representan la electricidad fluyendo. El color cambia en tiempo real según la tarifa actual (verde, amarillo o rojo). También verás cómo la batería se carga en horas valle y se descarga en horas punta."
+                    },
+                    {
+                        keywords: ['grafico de barras', 'curva de demanda', 'antes y despues', 'comparativa'],
+                        response: "El gráfico 'Curva de Demanda' compara dos escenarios. Las barras semitransparentes muestran tu consumo original (con los picos altos en horas caras). Las barras sólidas muestran tu consumo después de presionar 'Optimizar'. Verás visualmente cómo los picos rojos desaparecen y se trasladan a zonas verdes, logrando una curva mucho más plana y económica."
+                    },
+                    {
+                        keywords: ['factor de carga', 'factor'],
+                        response: "El Factor de Carga es un indicador de eficiencia de la red. Se calcula dividiendo el consumo promedio entre el consumo máximo (el pico). Un factor de carga alto (cercano al 100%) significa que tu consumo es muy estable y plano. Un factor bajo indica que tienes picos muy altos y consumos muy bajos. Optimizar las cargas mejora este factor."
+                    },
+                    {
+                        keywords: ['quien te creo', 'quien eres', 'que eres', 'inteligencia artificial'],
+                        response: "Soy el asistente virtual integrado de GridShift Pro. Fui diseñado para guiar a los usuarios en el entendimiento de las redes eléctricas inteligentes y asegurar que aprovechen al máximo todas las herramientas de esta plataforma."
+                    },
+                    {
+                        keywords: ['gracias', 'excelente', 'muy bien', 'genial', 'perfecto'],
+                        response: "¡De nada! Estoy aquí para ayudarte. Si tienes más dudas sobre cómo esta página puede ayudarnos a construir un futuro energético más sostenible, solo dime."
+                    }
+                ];
+
+                // Buscar la mejor coincidencia
+                let bestMatchScore = 0;
+                for (const item of knowledgeBase) {
+                    let score = 0;
+                    for (const keyword of item.keywords) {
+                        if (query.includes(keyword)) score++;
+                    }
+                    if (score > bestMatchScore) {
+                        bestMatchScore = score;
+                        botReply = item.response;
+                    }
                 }
-                else if (query.includes('tarifa') || query.includes('precio') || query.includes('punta') || query.includes('valle')) {
-                    botReply = "Usamos tarifas TOU (Time-of-Use). La tarifa Valle (00-06h y 22-24h) es la más barata. La tarifa Punta (17-22h) es la más cara y debemos evitarla. Puedes editarlas en el botón 'Editar'.";
-                }
-                else if (query.includes('demanda') || query.includes('respuesta')) {
-                    botReply = "La respuesta de la demanda consiste en cambiar los hábitos de consumo. Movemos las cargas grandes (como el carro eléctrico o la lavadora) de las horas Punta a las horas Valle, ahorrando dinero sin gastar menos energía.";
-                }
-                else if (query.includes('cómo funciona') || query.includes('optimizar') || query.includes('mover cargas')) {
-                    botReply = "Usa el botón 'Optimizar' o haz clic en las flechas de cada electrodoméstico. El sistema moverá automáticamente las cargas flexibles a los horarios más baratos. Verás el ahorro reflejado en los gráficos.";
-                }
-                else if (query.includes('informe') || query.includes('correo') || query.includes('hoja de cálculo') || query.includes('excel')) {
-                    botReply = "Al hacer clic en 'Generar Informe', puedes ingresar un correo y la URL del Apps Script. Esto guardará los datos en Google Sheets y enviará un correo con todos los resultados del ahorro.";
-                }
-                else if (query.includes('conservación') || query.includes('energía')) {
-                    botReply = "La conservación de energía asegura que mover las horas de uso de un aparato no destruye ni crea energía. Los kWh consumidos antes son exactamente los mismos que después, solo cambia el costo.";
-                }
-                else {
-                    botReply = "Interesante pregunta. Como asistente, puedo explicarte sobre: Smart Grid, Respuesta de la Demanda, Tarifas TOU (Punta/Valle), Conservación de Energía o cómo Generar un Informe.";
+
+                // Si no hubo coincidencias claras, dar respuesta de fallback
+                if (bestMatchScore === 0) {
+                    botReply = "Interesante pregunta. Aún estoy aprendiendo sobre eso. Como asistente de esta página, puedo explicarte claramente: 1) ¿Para qué sirve la página? 2) ¿Qué es una Smart Grid? 3) El funcionamiento de las Tarifas TOU. 4) Cómo optimizar tus aparatos. 5) Cómo se genera el informe. ¿Sobre cuál de estos temas te gustaría saber?";
                 }
 
                 addMessageToChat('bot', botReply);
