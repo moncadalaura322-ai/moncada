@@ -709,7 +709,7 @@
         </div>
     </div>
 
-    <!-- ================= ★ ASISTENTE IA ★ ================= -->
+    <!-- ================= ★ ASISTENTE LOCAL ★ ================= -->
     <div class="ai-fab" onclick="toggleAIChat()" id="aiFab">
         <i data-lucide="bot"></i>
     </div>
@@ -722,7 +722,7 @@
                 </div>
                 <div>
                     <h3 class="text-xs font-bold text-white">Asistente GridShift</h3>
-                    <p class="text-[9px] text-eco-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-eco-400 animate-pulse"></span> En línea</p>
+                    <p class="text-[9px] text-eco-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-eco-400 animate-pulse"></span> En línea (Local)</p>
                 </div>
             </div>
             <button onclick="toggleAIChat()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
@@ -1501,21 +1501,7 @@
             if (marker) marker.style.left = (displayHour / 24 * 100) + '%';
         }
 
-        // ================= LÓGICA DE LA IA (OPENROUTER) =================
-        const AI_API_KEY = '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'; 
-        const AI_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-        const AI_MODEL = 'google/gemma-4-31b-it:free'; 
-
-        const SYSTEM_PROMPT = `Eres el "Asistente GridShift", un experto en ingeniería eléctrica y Smart Grids integrado en la aplicación web GridShift Pro.
-Tu objetivo es ayudar a los usuarios a entender los conceptos de la plataforma.
-Conoces a la perfección:
-1. Smart Grid: Red eléctrica inteligente con flujo bidireccional y medición inteligente (AMI).
-2. Respuesta de la Demanda: Desplazar cargas de horas "Punta" (caras) a horas "Valle" (baratas) para ahorrar.
-3. Tarifas TOU: Valle (00-06h y 22-24h), Llano (06-17h), Punta (17-22h).
-4. Conservación de Energía: La app garantiza que la energía total consumida (kWh) no cambia, solo la hora.
-5. Gestión de Cargas: El usuario puede agregar electrodomésticos, calcular su consumo (kW * horas) y optimizarlos.
-Responde siempre de forma clara, breve (máximo 3 o 4 oraciones), amable y profesional en español. No uses formatos complejos de markdown, solo texto plano para que la voz lo pueda leer fluidamente.`;
-
+        // ================= ASISTENTE LOCAL (SIN API) =================
         let aiChatOpen = false;
         let isListening = false;
         let recognition = null;
@@ -1547,7 +1533,7 @@ Responde siempre de forma clara, breve (máximo 3 o 4 oraciones), amable y profe
             if (e.key === 'Enter') sendAIMessage();
         }
 
-        async function sendAIMessage() {
+        function sendAIMessage() {
             const inputEl = document.getElementById('aiInput');
             const text = inputEl.value.trim();
             if (!text) return;
@@ -1562,49 +1548,41 @@ Responde siempre de forma clara, breve (máximo 3 o 4 oraciones), amable y profe
             `;
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-            try {
-                const response = await fetch(AI_API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${AI_API_KEY}`,
-                        'HTTP-Referer': 'https://gridshift.pro',
-                        'X-Title': 'GridShift Pro'
-                    },
-                    body: JSON.stringify({
-                        model: AI_MODEL,
-                        messages: [
-                            { role: 'system', content: SYSTEM_PROMPT },
-                            { role: 'user', content: text }
-                        ],
-                        temperature: 0.7
-                    })
-                });
+            // Simulamos un pequeño retraso (0.6s) para que parezca natural
+            setTimeout(() => {
+                document.getElementById(typingId).remove();
+                
+                const query = text.toLowerCase();
+                let botReply = "";
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error('Error de API:', response.status, errorData);
-                    document.getElementById(typingId).remove();
-                    addMessageToChat('bot', `Error de API (${response.status}). Revisa la consola para más detalles.`);
-                    return;
+                if (query.includes('hola') || query.includes('buenos días') || query.includes('buenas')) {
+                    botReply = "¡Hola! Soy el asistente de GridShift Pro. ¿Quieres saber sobre Smart Grids, Tarifas o cómo enviar un informe?";
+                } 
+                else if (query.includes('smart grid') || query.includes('red inteligente') || query.includes('que es')) {
+                    botReply = "Una Smart Grid es una red eléctrica que integra tecnología para equilibrar el consumo en tiempo real. Permite el flujo de energía en dos sentidos y se comunica con los electrodomésticos.";
+                }
+                else if (query.includes('tarifa') || query.includes('precio') || query.includes('punta') || query.includes('valle')) {
+                    botReply = "Usamos tarifas TOU (Time-of-Use). La tarifa Valle (00-06h y 22-24h) es la más barata. La tarifa Punta (17-22h) es la más cara y debemos evitarla. Puedes editarlas en el botón 'Editar'.";
+                }
+                else if (query.includes('demanda') || query.includes('respuesta')) {
+                    botReply = "La respuesta de la demanda consiste en cambiar los hábitos de consumo. Movemos las cargas grandes (como el carro eléctrico o la lavadora) de las horas Punta a las horas Valle, ahorrando dinero sin gastar menos energía.";
+                }
+                else if (query.includes('cómo funciona') || query.includes('optimizar') || query.includes('mover cargas')) {
+                    botReply = "Usa el botón 'Optimizar' o haz clic en las flechas de cada electrodoméstico. El sistema moverá automáticamente las cargas flexibles a los horarios más baratos. Verás el ahorro reflejado en los gráficos.";
+                }
+                else if (query.includes('informe') || query.includes('correo') || query.includes('hoja de cálculo') || query.includes('excel')) {
+                    botReply = "Al hacer clic en 'Generar Informe', puedes ingresar un correo y la URL del Apps Script. Esto guardará los datos en Google Sheets y enviará un correo con todos los resultados del ahorro.";
+                }
+                else if (query.includes('conservación') || query.includes('energía')) {
+                    botReply = "La conservación de energía asegura que mover las horas de uso de un aparato no destruye ni crea energía. Los kWh consumidos antes son exactamente los mismos que después, solo cambia el costo.";
+                }
+                else {
+                    botReply = "Interesante pregunta. Como asistente, puedo explicarte sobre: Smart Grid, Respuesta de la Demanda, Tarifas TOU (Punta/Valle), Conservación de Energía o cómo Generar un Informe.";
                 }
 
-                const data = await response.json();
-                document.getElementById(typingId).remove();
-
-                if (data.choices && data.choices.length > 0 && data.choices[0].message) {
-                    const botReply = data.choices[0].message.content;
-                    addMessageToChat('bot', botReply);
-                    speakText(botReply);
-                } else {
-                    console.error('Respuesta inesperada:', data);
-                    addMessageToChat('bot', 'La IA no devolvió una respuesta válida. Revisa la consola.');
-                }
-            } catch (error) {
-                console.error('Error de red/CORS:', error);
-                document.getElementById(typingId).remove();
-                addMessageToChat('bot', 'Error de conexión. Puede ser un problema de CORS o de red. Revisa la consola.');
-            }
+                addMessageToChat('bot', botReply);
+                speakText(botReply);
+            }, 600);
         }
 
         function addMessageToChat(role, text) {
