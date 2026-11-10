@@ -56,12 +56,8 @@
         .float-icon { animation: float 3s ease-in-out infinite; }
         .live-dot { animation: pulse-glow 1.5s ease-in-out infinite; }
 
-        .app-row {
-            transition: all 0.2s ease;
-        }
-        .app-row:hover {
-            background: rgba(30,41,59,0.7);
-        }
+        .app-row { transition: all 0.2s ease; }
+        .app-row:hover { background: rgba(30,41,59,0.7); }
 
         @keyframes slide-in-modal {
             from { opacity: 0; transform: translateY(12px) scale(0.98); }
@@ -74,6 +70,73 @@
             50% { box-shadow: 0 0 0 3px rgba(16,185,129,0.5); }
         }
         .app-new { animation: flash-new 1s ease-in-out 2; }
+
+        /* ================= CHATBOT IA ================= */
+        .ai-fab {
+            position: fixed; bottom: 24px; right: 24px;
+            width: 56px; height: 56px; border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #10b981);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 10px 25px -5px rgba(99,102,241,0.5);
+            cursor: pointer; z-index: 45; transition: all 0.3s;
+        }
+        .ai-fab:hover { transform: scale(1.1) translateY(-2px); }
+        .ai-fab svg { color: white; width: 28px; height: 28px; }
+
+        .ai-chat-window {
+            position: fixed; bottom: 90px; right: 24px;
+            width: 360px; height: 520px; max-height: 80vh;
+            display: flex; flex-direction: column;
+            z-index: 45; border-radius: 20px; overflow: hidden;
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.8);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0; pointer-events: none; transform: translateY(20px);
+        }
+        .ai-chat-window.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+        .ai-header {
+            background: rgba(15,23,42,0.95); border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .ai-messages {
+            flex: 1; padding: 16px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 12px;
+            background: rgba(2,6,23,0.8);
+        }
+        .ai-msg {
+            max-width: 85%; padding: 10px 14px; border-radius: 14px;
+            font-size: 12px; line-height: 1.5; word-wrap: break-word;
+        }
+        .ai-msg.user {
+            align-self: flex-end; background: #10b981; color: #020617;
+            border-bottom-right-radius: 2px;
+        }
+        .ai-msg.bot {
+            align-self: flex-start; background: rgba(30,41,59,0.9); color: #e2e8f0;
+            border: 1px solid rgba(255,255,255,0.1); border-bottom-left-radius: 2px;
+        }
+        .ai-input-area {
+            padding: 12px; background: rgba(15,23,42,0.95); border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex; gap: 8px; align-items: center;
+        }
+        .ai-input {
+            flex: 1; background: rgba(2,6,23,0.8); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px; padding: 8px 16px; color: white; font-size: 12px; outline: none;
+        }
+        .ai-input:focus { border-color: #10b981; }
+        .ai-btn {
+            width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s; border: none; color: white; flex-shrink: 0;
+        }
+        .ai-btn.send { background: #10b981; }
+        .ai-btn.mic { background: rgba(255,255,255,0.1); }
+        .ai-btn.mic.listening { background: #ef4444; animation: pulse-mic 1.5s infinite; }
+        @keyframes pulse-mic {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(239,68,68,0); }
+        }
+        .ai-typing::after { content: '...'; animation: typing 1.5s infinite; }
+        @keyframes typing { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-eco-500 selection:text-slate-950">
@@ -646,6 +709,42 @@
         </div>
     </div>
 
+    <!-- ================= ★ ASISTENTE IA ★ ================= -->
+    <div class="ai-fab" onclick="toggleAIChat()" id="aiFab">
+        <i data-lucide="bot"></i>
+    </div>
+
+    <div class="ai-chat-window glass-card" id="aiChatWindow">
+        <div class="ai-header">
+            <div class="flex items-center gap-2">
+                <div class="p-1.5 rounded-lg bg-eco-500/20 text-eco-400">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold text-white">Asistente GridShift</h3>
+                    <p class="text-[9px] text-eco-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-eco-400 animate-pulse"></span> En línea</p>
+                </div>
+            </div>
+            <button onclick="toggleAIChat()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+        
+        <div class="ai-messages" id="aiMessages">
+            <div class="ai-msg bot">
+                ¡Hola! Soy tu asistente experto en Smart Grid. Puedo explicarte cómo funciona el desplazamiento de cargas, las tarifas TOU o cómo interpretar tus resultados. ¿En qué te ayudo?
+            </div>
+        </div>
+        
+        <div class="ai-input-area">
+            <button class="ai-btn mic" id="aiMicBtn" onclick="toggleVoiceInput()" title="Hablar por micrófono">
+                <i data-lucide="mic" class="w-4 h-4"></i>
+            </button>
+            <input type="text" id="aiInput" class="ai-input" placeholder="Escribe o habla aquí..." onkeypress="handleAIKeyPress(event)">
+            <button class="ai-btn send" onclick="sendAIMessage()" title="Enviar">
+                <i data-lucide="send" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </div>
+
     <!-- ================= SCRIPT ================= -->
     <script>
         // =============== TARIFAS ===============
@@ -827,7 +926,6 @@
             }
         }
 
-        // =============== LISTA CON DELETE ===============
         function renderAppliancesList() {
             const c = document.getElementById('appliancesList');
             c.innerHTML = '';
@@ -934,7 +1032,6 @@
             document.getElementById('newAppCost').textContent = `≈ $${cost.toFixed(2)} @ ${startHour}:00`;
         }
 
-        // Listeners en vivo para la estimación
         ['newAppPower','newAppHours','newAppStartHour'].forEach(id => {
             document.addEventListener('input', e => {
                 if(e.target.id === id) updateNewAppEstimate();
@@ -951,7 +1048,7 @@
             const newApp = {
                 id: 'custom_' + Date.now(),
                 name: document.getElementById('newAppName').value.trim(),
-                power: +(powerW / 1000).toFixed(3),  // guardar en kW
+                power: +(powerW / 1000).toFixed(3), 
                 duration: hours,
                 startHour: startHour,
                 shiftable: shiftable,
@@ -1402,6 +1499,157 @@
 
             const marker = document.getElementById('timeMarker');
             if (marker) marker.style.left = (displayHour / 24 * 100) + '%';
+        }
+
+        // ================= LÓGICA DE LA IA =================
+        const AI_API_KEY = 'sk-41f2707526654c04855d59ef2a29613c'; 
+        const AI_API_URL = 'https://api.deepseek.com/chat/completions';
+
+        const SYSTEM_PROMPT = `Eres el "Asistente GridShift", un experto en ingeniería eléctrica y Smart Grids integrado en la aplicación web GridShift Pro.
+Tu objetivo es ayudar a los usuarios a entender los conceptos de la plataforma.
+Conoces a la perfección:
+1. Smart Grid: Red eléctrica inteligente con flujo bidireccional y medición inteligente (AMI).
+2. Respuesta de la Demanda: Desplazar cargas de horas "Punta" (caras) a horas "Valle" (baratas) para ahorrar.
+3. Tarifas TOU: Valle (00-06h y 22-24h), Llano (06-17h), Punta (17-22h).
+4. Conservación de Energía: La app garantiza que la energía total consumida (kWh) no cambia, solo la hora.
+5. Gestión de Cargas: El usuario puede agregar electrodomésticos, calcular su consumo (kW * horas) y optimizarlos.
+Responde siempre de forma clara, breve (máximo 3 o 4 oraciones), amable y profesional en español. No uses formatos complejos de markdown, solo texto plano para que la voz lo pueda leer fluidamente.`;
+
+        let aiChatOpen = false;
+        let isListening = false;
+        let recognition = null;
+
+        const synth = window.speechSynthesis;
+        function speakText(text) {
+            if (synth.speaking) synth.cancel();
+            const cleanText = text.replace(/[*#_]/g, '');
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = 'es-ES';
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            synth.speak(utterance);
+        }
+
+        function toggleAIChat() {
+            aiChatOpen = !aiChatOpen;
+            const win = document.getElementById('aiChatWindow');
+            if (aiChatOpen) {
+                win.classList.add('open');
+                setTimeout(() => document.getElementById('aiInput').focus(), 300);
+            } else {
+                win.classList.remove('open');
+                if (synth.speaking) synth.cancel();
+            }
+        }
+
+        function handleAIKeyPress(e) {
+            if (e.key === 'Enter') sendAIMessage();
+        }
+
+        async function sendAIMessage() {
+            const inputEl = document.getElementById('aiInput');
+            const text = inputEl.value.trim();
+            if (!text) return;
+
+            addMessageToChat('user', text);
+            inputEl.value = '';
+
+            const typingId = 'typing-' + Date.now();
+            const messagesContainer = document.getElementById('aiMessages');
+            messagesContainer.innerHTML += `
+                <div class="ai-msg bot ai-typing" id="${typingId}">Pensando...</div>
+            `;
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            try {
+                const response = await fetch(AI_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${AI_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'deepseek-chat',
+                        messages: [
+                            { role: 'system', content: SYSTEM_PROMPT },
+                            { role: 'user', content: text }
+                        ],
+                        temperature: 0.7
+                    })
+                });
+
+                const data = await response.json();
+                document.getElementById(typingId).remove();
+
+                if (data.choices && data.choices.length > 0) {
+                    const botReply = data.choices[0].message.content;
+                    addMessageToChat('bot', botReply);
+                    speakText(botReply); 
+                } else {
+                    addMessageToChat('bot', 'Lo siento, hubo un error al procesar tu pregunta.');
+                }
+            } catch (error) {
+                document.getElementById(typingId).remove();
+                addMessageToChat('bot', 'Error de conexión. Revisa tu API Key o tu conexión a internet.');
+                console.error(error);
+            }
+        }
+
+        function addMessageToChat(role, text) {
+            const messagesContainer = document.getElementById('aiMessages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `ai-msg ${role}`;
+            msgDiv.textContent = text;
+            messagesContainer.appendChild(msgDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("Tu navegador no soporta el micrófono. Usa Chrome o Edge.");
+                return null;
+            }
+            const rec = new SpeechRecognition();
+            rec.lang = 'es-ES';
+            rec.interimResults = false;
+            rec.maxAlternatives = 1;
+
+            rec.onstart = () => {
+                isListening = true;
+                document.getElementById('aiMicBtn').classList.add('listening');
+            };
+
+            rec.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('aiInput').value = transcript;
+                sendAIMessage();
+            };
+
+            rec.onend = () => {
+                isListening = false;
+                document.getElementById('aiMicBtn').classList.remove('listening');
+            };
+
+            rec.onerror = (event) => {
+                console.error("Error de micrófono:", event.error);
+                isListening = false;
+                document.getElementById('aiMicBtn').classList.remove('listening');
+            };
+
+            return rec;
+        }
+
+        function toggleVoiceInput() {
+            if (!recognition) recognition = initSpeechRecognition();
+            if (!recognition) return;
+
+            if (isListening) {
+                recognition.stop();
+            } else {
+                if (synth.speaking) synth.cancel();
+                recognition.start();
+            }
         }
 
         // =============== INIT ===============
