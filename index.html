@@ -1501,7 +1501,7 @@
             if (marker) marker.style.left = (displayHour / 24 * 100) + '%';
         }
 
-        // ================= LÓGICA DE LA IA =================
+        // ================= LÓGICA DE LA IA (DIAGNÓSTICO) =================
         const AI_API_KEY = 'sk-41f2707526654c04855d59ef2a29613c'; 
         const AI_API_URL = 'https://api.deepseek.com/chat/completions';
 
@@ -1578,20 +1578,30 @@ Responde siempre de forma clara, breve (máximo 3 o 4 oraciones), amable y profe
                     })
                 });
 
+                // Verificar si la respuesta HTTP es OK
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Error de API:', response.status, errorData);
+                    document.getElementById(typingId).remove();
+                    addMessageToChat('bot', `Error de API (${response.status}). Revisa la consola para más detalles.`);
+                    return;
+                }
+
                 const data = await response.json();
                 document.getElementById(typingId).remove();
 
-                if (data.choices && data.choices.length > 0) {
+                if (data.choices && data.choices.length > 0 && data.choices[0].message) {
                     const botReply = data.choices[0].message.content;
                     addMessageToChat('bot', botReply);
-                    speakText(botReply); 
+                    speakText(botReply);
                 } else {
-                    addMessageToChat('bot', 'Lo siento, hubo un error al procesar tu pregunta.');
+                    console.error('Respuesta inesperada:', data);
+                    addMessageToChat('bot', 'La IA no devolvió una respuesta válida. Revisa la consola.');
                 }
             } catch (error) {
+                console.error('Error de red/CORS:', error);
                 document.getElementById(typingId).remove();
-                addMessageToChat('bot', 'Error de conexión. Revisa tu API Key o tu conexión a internet.');
-                console.error(error);
+                addMessageToChat('bot', 'Error de conexión. Puede ser un problema de CORS o de red. Revisa la consola.');
             }
         }
 
